@@ -31,15 +31,8 @@ jobs:
         pip install -r requirements.txt
     
     - name: 🔧 Crear config.json con webhook
-      env:
-        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
       run: |
-        cat > config.json << EOF
-        {
-          "webhook_url": "${DISCORD_WEBHOOK}",
-          "enviar_discord": true
-        }
-        EOF
+        python -c "import json; open('config.json', 'w').write(json.dumps({'webhook_url': '${{ secrets.DISCORD_WEBHOOK }}', 'enviar_discord': True}))"
     
     - name: 🎮 Ejecutar HunDea
       run: python hundea.py
