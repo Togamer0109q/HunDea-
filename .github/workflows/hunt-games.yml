@@ -14,10 +14,10 @@ jobs:
     
     steps:
     - name: 📥 Checkout código
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     
     - name: 🐍 Configurar Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
         cache: 'pip'
@@ -36,13 +36,6 @@ jobs:
     
     - name: 🎮 Ejecutar HunDea
       run: python hundea.py
-    
-    - name: 💾 Guardar cache actualizado
-      uses: actions/upload-artifact@v3
-      with:
-        name: cache
-        path: cache.json
-        retention-days: 7
     
     - name: 📊 Actualizar cache en el repo
       run: |
