@@ -132,6 +132,19 @@ def formatear_fecha(fecha_str):
         return "Fecha no disponible"
 
 
+def fecha_a_timestamp(fecha_str):
+    """
+    Convierte la fecha ISO a Unix timestamp para Discord
+    Retorna un string con formato Discord: <t:timestamp:R>
+    """
+    try:
+        fecha = datetime.fromisoformat(fecha_str.replace('Z', '+00:00'))
+        timestamp = int(fecha.timestamp())
+        return f"<t:{timestamp}:R>"  # R = relative time (ej: "en 3 días")
+    except:
+        return "Fecha no disponible"
+
+
 def enviar_a_discord(juego, webhook_url):
     """
     Envía un embed bonito a Discord con la info del juego gratis
@@ -146,7 +159,7 @@ def enviar_a_discord(juego, webhook_url):
             "fields": [
                 {
                     "name": "⏰ Disponible hasta",
-                    "value": formatear_fecha(juego['fin']),
+                    "value": fecha_a_timestamp(juego['fin']),
                     "inline": False
                 }
             ],
