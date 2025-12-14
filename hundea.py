@@ -245,7 +245,10 @@ def main():
     if config and config.get('enviar_discord', False):
         webhook_url = config.get('webhook_url', '')
         
-        if not webhook_url or webhook_url == "tu_webhook_aqui":
+        # Debug: mostrar qué webhook se cargó
+        print(f"\n🔍 DEBUG: Webhook cargado: {webhook_url[:50]}..." if len(webhook_url) > 50 else f"\n🔍 DEBUG: Webhook cargado: {webhook_url}")
+        
+        if not webhook_url or webhook_url == "tu_webhook_aqui" or webhook_url == "WEBHOOK_FROM_ENVIRONMENT":
             print("\n⚠️ No hay webhook configurado. Solo mostrando en consola.")
         else:
             print("\n📤 Enviando alertas a Discord...\n")
