@@ -135,12 +135,12 @@ def formatear_fecha(fecha_str):
 def fecha_a_timestamp(fecha_str):
     """
     Convierte la fecha ISO a Unix timestamp para Discord
-    Retorna un string con formato Discord: <t:timestamp:R>
+    Retorna un string con formato Discord: <t:timestamp:F>
     """
     try:
         fecha = datetime.fromisoformat(fecha_str.replace('Z', '+00:00'))
         timestamp = int(fecha.timestamp())
-        return f"<t:{timestamp}:R>"  # R = relative time (ej: "en 3 días")
+        return f"<t:{timestamp}:F>"  # F = fecha y hora completa
     except:
         return "Fecha no disponible"
 
