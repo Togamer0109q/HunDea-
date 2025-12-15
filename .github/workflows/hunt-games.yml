@@ -31,16 +31,19 @@ jobs:
         pip install -r requirements.txt
     
     - name: 🔧 Crear config.json con webhook
+      env:
+        WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
       run: |
         python3 << 'PYTHON_SCRIPT'
         import json
+        import os
         config = {
-            "webhook_url": "https://discord.com/api/webhooks/1449825521939644517/Sf1Aa88cC_7b2XpiYs7b9wIBG5bBzHcXj7OHi-6J1JaATHFL_poCLh2dEkm7wxYB-2wh",
+            "webhook_url": os.environ.get('WEBHOOK', ''),
             "enviar_discord": True
         }
         with open('config.json', 'w') as f:
             json.dump(config, f)
-        print("✅ config.json creado con webhook")
+        print(f"✅ config.json creado (webhook: {config['webhook_url'][:30]}...)")
         PYTHON_SCRIPT
     
     - name: 🎮 Ejecutar HunDea
