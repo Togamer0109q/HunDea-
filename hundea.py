@@ -145,7 +145,7 @@ def fecha_a_timestamp(fecha_str):
         return "Fecha no disponible"
 
 
-def enviar_a_discord(juego, webhook_url):
+def enviar_a_discord(juego, webhook_url, rol_id=None):
     """
     Envía un embed bonito a Discord con la info del juego gratis
     """
@@ -173,9 +173,13 @@ def enviar_a_discord(juego, webhook_url):
         if juego['imagen']:
             embed["image"] = {"url": juego['imagen']}
         
-        # Payload completo
+        # Payload completo con mención de rol
+        content = "🎮 **¡Nuevo juego GRATIS en Epic Games!**"
+        if rol_id:
+            content += f" <@&{rol_id}>"
+        
         payload = {
-            "content": "🎮 **¡Nuevo juego GRATIS en Epic Games!**",
+            "content": content,
             "embeds": [embed]
         }
         
@@ -244,6 +248,7 @@ def main():
     # Si hay configuración, enviar a Discord
     if config and config.get('enviar_discord', False):
         webhook_url = config.get('webhook_url', '')
+        rol_id = config.get('rol_id', None)
         
         # Debug: mostrar qué webhook se cargó
         print(f"\n🔍 DEBUG: Webhook cargado: {webhook_url[:50]}..." if len(webhook_url) > 50 else f"\n🔍 DEBUG: Webhook cargado: {webhook_url}")
@@ -261,7 +266,7 @@ def main():
                     continue
                 
                 # Enviar a Discord
-                if enviar_a_discord(juego, webhook_url):
+                if enviar_a_discord(juego, webhook_url, rol_id):
                     cache['juegos_anunciados'].append(juego['id'])
                     juegos_nuevos += 1
             

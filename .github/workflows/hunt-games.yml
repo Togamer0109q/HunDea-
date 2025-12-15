@@ -39,7 +39,8 @@ jobs:
         import os
         config = {
             "webhook_url": os.environ.get('WEBHOOK', ''),
-            "enviar_discord": True
+            "enviar_discord": True,
+            "rol_id": "1449938401649496176"
         }
         with open('config.json', 'w') as f:
             json.dump(config, f)
