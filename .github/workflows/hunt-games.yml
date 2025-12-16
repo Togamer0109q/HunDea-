@@ -1,4 +1,4 @@
-name: HunDea - Epic Games Hunter
+name: HunDea v2 - Multi-Store Hunter
 
 on:
   schedule:
@@ -30,25 +30,33 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: 🔧 Crear config.json con webhook
+    - name: 🔧 Crear config.json con webhooks
       env:
-        WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        WEBHOOK_PREMIUM: ${{ secrets.DISCORD_WEBHOOK }}
+        WEBHOOK_BAJOS: ${{ secrets.DISCORD_WEBHOOK2 }}
+        WEBHOOK_WEEKENDS: ${{ secrets.DISCORD_WEBHOOK3 }}
+        RAWG_KEY: ${{ secrets.RAWG_API_KEY }}
       run: |
         python3 << 'PYTHON_SCRIPT'
         import json
         import os
         config = {
-            "webhook_url": os.environ.get('WEBHOOK', ''),
+            "webhook_premium": os.environ.get('WEBHOOK_PREMIUM', ''),
+            "webhook_bajos": os.environ.get('WEBHOOK_BAJOS', ''),
+            "webhook_weekends": os.environ.get('WEBHOOK_WEEKENDS', ''),
             "enviar_discord": True,
-            "rol_id": "1449938401649496176"
+            "rol_id": "1449938401649496176",
+            "rawg_api_key": os.environ.get('RAWG_KEY', '')
         }
         with open('config.json', 'w') as f:
             json.dump(config, f)
-        print(f"✅ config.json creado (webhook: {config['webhook_url'][:30]}...)")
+        print(f"✅ config.json creado con 3 webhooks")
+        if config['rawg_api_key']:
+            print("✅ RAWG API key configurada")
         PYTHON_SCRIPT
     
-    - name: 🎮 Ejecutar HunDea
-      run: python hundea.py
+    - name: 🎮 Ejecutar HunDea v2
+      run: python hundea_v2.py
     
     - name: 📊 Actualizar cache en el repo
       run: |

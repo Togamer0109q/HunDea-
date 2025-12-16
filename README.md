@@ -1,6 +1,32 @@
-# 🎮 HunDea - Epic Games Free Hunter
+# 🎮 HunDea v2 - Multi-Store Free Games Hunter
 
-Bot cazador de juegos gratis de Epic Games que envía alertas bonitas a Discord.
+Bot inteligente que detecta juegos gratis de múltiples tiendas y los clasifica automáticamente por calidad.
+
+## ✨ Características v2
+
+✅ **Múltiples tiendas**
+- Epic Games Store ✅
+- Steam (en desarrollo)
+- GOG (en desarrollo)
+- RAWG para reviews externas ✅
+
+✅ **Sistema de puntuación inteligente**
+- Reviews de usuarios
+- Popularidad
+- Metacritic
+- Score de 0.0 a 5.0
+
+✅ **3 canales de Discord**
+- **Premium** (Score 3.7+): Juegos de calidad comprobada
+- **Bajos** (Score <3.7): Juegos sin reviews o calidad dudosa
+- **Free Weekends**: Juegos gratis temporalmente
+
+✅ **Automatizado 24/7**
+- Se ejecuta cada 3 horas en GitHub Actions
+- Cache inteligente (no repite juegos)
+- Webhooks seguros
+
+---
 
 ## 🚀 Instalación
 
@@ -10,95 +36,156 @@ Bot cazador de juegos gratis de Epic Games que envía alertas bonitas a Discord.
 pip install -r requirements.txt
 ```
 
-### 2. Configura tu webhook de Discord
+### 2. Obtén tu RAWG API Key (IMPORTANTE)
 
-**¿Cómo obtener un webhook?**
+**¿Por qué?** RAWG proporciona reviews y ratings para juegos de Epic Games.
 
-1. Ve a tu servidor de Discord
-2. Click derecho en el canal donde quieres las notificaciones
-3. **Editar canal** → **Integraciones** → **Webhooks**
-4. **Crear webhook** → Copia la URL
+1. Ve a: https://rawg.io/apidocs
+2. Click en **Get API Key** (arriba derecha)
+3. Crea cuenta gratis
+4. Copia tu API key
+5. GitHub Settings → Secrets → **New repository secret**
+   - Name: `RAWG_API_KEY`
+   - Value: [tu API key]
 
-**Edita `config.json`:**
+### 3. Configura los 3 webhooks de Discord
 
-```json
-{
-  "webhook_url": "https://discord.com/api/webhooks/tu_webhook_real_aqui",
-  "enviar_discord": true
-}
-```
+**Canal #gamesdeals (Premium)**
+- Juegos con score 3.7+ 
+- Copiar webhook → GitHub Secret: `DISCORD_WEBHOOK`
 
-⚠️ **Importante:** Cambia `"enviar_discord"` a `true` para activar las notificaciones.
+**Canal #gameslowers (Bajos)**
+- Juegos con score <3.7
+- Copiar webhook → GitHub Secret: `DISCORD_WEBHOOK2`
+
+**Canal #xfreeweekends**
+- Free weekends de Steam
+- Copiar webhook → GitHub Secret: `DISCORD_WEBHOOK3`
+
+### 3. Configura el rol a mencionar
+
+Obtén el ID del rol en Discord y agrégalo en el workflow.
+
+---
 
 ## 🎯 Uso
 
-### Modo básico (solo ver en consola)
+### Modo local (testing)
 
 ```bash
-python hundea.py
+python hundea_v2.py
 ```
 
-Esto te mostrará los juegos gratis actuales en la terminal.
+### Modo automático (GitHub Actions)
 
-### Modo Discord (enviar alertas)
+Se ejecuta solo cada 3 horas. También puedes ejecutarlo manualmente:
 
-1. Asegúrate de tener configurado `config.json` correctamente
-2. Ejecuta: `python hundea.py`
-3. Las alertas se enviarán automáticamente a Discord
+1. Ve a **Actions** en GitHub
+2. **HunDea v2 - Multi-Store Hunter**
+3. **Run workflow**
+
+---
+
+## 📊 Sistema de puntuación
+
+```
+Score = Reviews (0-3pts) + Popularidad (0-1.5pts) + Metacritic (0-0.5pts)
+
+4.5 - 5.0 ⭐⭐⭐ Excelente
+3.7 - 4.4 ⭐⭐   Muy bueno
+2.0 - 3.6 ⭐     Aceptable
+0.0 - 1.9 ⚠️     Dudoso
+```
+
+**Clasificación:**
+- **3.7+** → Canal Premium
+- **<3.7** → Canal Bajos
+
+---
 
 ## 📁 Estructura del proyecto
 
 ```
 HunDeaBot/
-├── hundea.py          ← Script principal
-├── config.json        ← Configuración (webhook)
-├── cache.json         ← Juegos ya anunciados (evita repetidos)
-├── requirements.txt   ← Dependencias Python
-└── README.md          ← Este archivo
+├── hundea_v2.py              ← Script principal v2
+├── hundea.py                 ← Script v1 (legacy)
+├── modules/
+│   ├── epic_hunter.py        ← Detector de Epic Games
+│   ├── steam_hunter.py       ← Detector de Steam
+│   ├── scoring.py            ← Sistema de puntuación
+│   └── discord_notifier.py   ← Notificaciones a Discord
+├── config.json               ← Configuración
+├── cache.json                ← Cache de juegos anunciados
+├── requirements.txt          ← Dependencias
+└── .github/workflows/
+    └── hunt-games.yml        ← Automatización
+
 ```
 
-## 🔧 Características
+---
 
-✅ Consulta la API oficial de Epic Games  
-✅ Detecta juegos 100% gratis  
-✅ Envía embeds bonitos a Discord  
-✅ Sistema de cache (no repite juegos)  
-✅ Fechas en español  
-✅ Manejo de errores  
+## 🎨 Preview de mensajes
 
-## 🤖 Automatización (próximamente)
+### Canal Premium
+```
+🎮 ¡JUEGO GRATIS de CALIDAD! @FreeGame!
 
-Puedes programar HunDea para que se ejecute automáticamente cada X horas usando:
+⭐⭐⭐ Hogwarts Legacy
+🏪 Tienda: Epic Games
+📊 Score HunDea: 4.8/5.0
+⭐ 92% Positivas (120,000 reviews)
+⏰ Disponible hasta: miércoles, 18 de diciembre...
+```
 
-- **Windows:** Programador de tareas
-- **Linux/Mac:** Cron jobs
-- **GitHub Actions:** Gratis en la nube
+### Canal Bajos
+```
+⚠️ Juego gratis (calidad no verificada)
 
-## 📝 Notas
+⚠️ Unknown Indie Game
+🏪 Tienda: Itch.io
+📊 Score HunDea: 2.1/5.0
+📊 Insuficientes reviews
+```
 
-- El script NO es interactivo, solo envía alertas cuando encuentra juegos nuevos
-- Los juegos ya anunciados se guardan en `cache.json` para no repetirlos
-- Puedes ejecutarlo manualmente cuando quieras
+### Canal Free Weekends
+```
+⏰ ¡GRATIS ESTE FIN DE SEMANA!
 
-## 🐛 Problemas comunes
+⏰ GTA V
+🏪 Tienda: Steam
+📊 Score HunDea: 4.5/5.0
+⭐ 88% Positivas (500,000 reviews)
+🕒 Solo hasta el domingo 23:59
+```
 
-**"No se encontró config.json"**
-- Asegúrate de ejecutar el script desde la carpeta `HunDeaBot`
+---
 
-**"Discord respondió con código XXX"**
-- Verifica que tu webhook sea válido
-- Asegúrate de que el canal del webhook todavía existe
+## 🔧 Próximas características v3
 
-**"Error al consultar Epic Games"**
-- Verifica tu conexión a internet
-- Epic puede estar en mantenimiento
+- [ ] Soporte para GOG
+- [ ] Soporte para Itch.io
+- [ ] Soporte para Prime Gaming
+- [ ] Integración con RAWG API para más reviews
+- [ ] Metacritic scraping
+- [ ] Filtros personalizados por usuario
+- [ ] Estadísticas mensuales
 
-## 💡 Próximas versiones
+---
 
-- [ ] Soporte para múltiples webhooks
-- [ ] Filtros personalizados (géneros, ratings)
-- [ ] Integración con Claude para descripciones mejoradas
-- [ ] Panel web para configuración
+## 📝 Changelog
+
+### v2.0.0 (Actual)
+- ✅ Soporte multi-tienda (Epic + Steam)
+- ✅ Sistema de puntuación inteligente
+- ✅ 3 canales de Discord
+- ✅ Arquitectura modular
+- ✅ Free Weekends de Steam
+
+### v1.0.0
+- ✅ Soporte para Epic Games
+- ✅ Notificaciones a Discord
+- ✅ Cache de juegos
+- ✅ Automatización GitHub Actions
 
 ---
 
