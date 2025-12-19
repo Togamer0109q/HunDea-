@@ -1,6 +1,7 @@
 """
 Sistema de puntuación para HunDea v2
 Calcula el score de cada juego basado en reviews y popularidad
+Versión mejorada con sistema híbrido inteligente
 """
 
 class SistemaScoring:
@@ -15,7 +16,7 @@ class SistemaScoring:
     @staticmethod
     def calcular_score(juego_info):
         """
-        Calcula el score total de un juego
+        Calcula el score total de un juego con sistema híbrido
         
         Args:
             juego_info (dict): Información del juego con reviews
@@ -23,9 +24,63 @@ class SistemaScoring:
         Returns:
             float: Score entre 0.0 y 5.0
         """
+        
+        # Sistema híbrido para RAWG
+        if juego_info.get('fuente') == 'RAWG' and 'reviews_percent' in juego_info:
+            reviews_count = juego_info.get('reviews_count', 0)
+            percent = juego_info['reviews_percent']
+            
+            # CASO 1: Muchas reviews (1000+) - Muy confiable
+            if reviews_count >= 1000:
+                base_score = (percent / 100.0) * 5.0
+                
+                if reviews_count >= 10000:
+                    base_score += 0.3
+                elif reviews_count >= 5000:
+                    base_score += 0.2
+                
+                if juego_info.get('metacritic'):
+                    meta = juego_info['metacritic']
+                    if meta >= 85:
+                        base_score += 0.2
+                    elif meta >= 75:
+                        base_score += 0.1
+                
+                return min(base_score, 5.0)
+            
+            # CASO 2: Reviews moderadas (50-999) y buenas (70%+) - Dar beneficio
+            elif reviews_count >= 50 and percent >= 70:
+                # Score base: 70% = 3.5, 80% = 4.0, 90% = 4.5
+                base_score = 2.5 + ((percent - 70) / 30.0) * 2.0
+                
+                # Bonus por cantidad
+                if reviews_count >= 500:
+                    base_score += 0.4
+                elif reviews_count >= 200:
+                    base_score += 0.3
+                elif reviews_count >= 100:
+                    base_score += 0.2
+                else:
+                    base_score += 0.1
+                
+                return min(base_score, 4.8)
+            
+            # CASO 3: Pocas reviews (10-49) - Muy conservador
+            elif reviews_count >= 10:
+                if percent >= 75:
+                    return 3.5  # Aceptable pero incierto
+                elif percent >= 65:
+                    return 3.0
+                else:
+                    return 2.5
+            
+            # CASO 4: Muy pocas reviews (<10) - Dudoso
+            else:
+                return 2.0 if percent >= 70 else 1.5
+        
+        # Sistema para Steam o fuentes con reviews nativas
         score = 0.0
         
-        # Componente 1: Reviews positivas (0-3 puntos)
         if 'reviews_percent' in juego_info and juego_info['reviews_percent']:
             percent = juego_info['reviews_percent']
             if percent >= 95:
@@ -47,7 +102,6 @@ class SistemaScoring:
             else:
                 score += 0.5
         
-        # Componente 2: Cantidad de reviews (0-1.5 puntos)
         if 'reviews_count' in juego_info and juego_info['reviews_count']:
             count = juego_info['reviews_count']
             if count >= 100000:
@@ -65,7 +119,6 @@ class SistemaScoring:
             else:
                 score += 0.1
         
-        # Componente 3: Metacritic (0-0.5 puntos bonus)
         if 'metacritic' in juego_info and juego_info['metacritic']:
             meta = juego_info['metacritic']
             if meta >= 90:
@@ -77,7 +130,6 @@ class SistemaScoring:
             elif meta >= 60:
                 score += 0.2
         
-        # Limitar score a 5.0
         return min(score, 5.0)
     
     @staticmethod
@@ -96,7 +148,7 @@ class SistemaScoring:
         elif score > 0:
             return 'bajos'
         else:
-            return 'desconocido'  # Sin reviews
+            return 'desconocido'
     
     @staticmethod
     def obtener_estrellas(score):
