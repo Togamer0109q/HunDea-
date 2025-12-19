@@ -143,7 +143,7 @@ class SistemaScoring:
         Returns:
             str: 'premium', 'bajos', o 'desconocido'
         """
-        if score >= 3.7:
+        if score >= 3.5:  # Bajado de 3.7 a 3.5
             return 'premium'
         elif score > 0:
             return 'bajos'
@@ -163,7 +163,7 @@ class SistemaScoring:
         """
         if score >= 4.5:
             return "⭐⭐⭐"
-        elif score >= 3.7:
+        elif score >= 3.5:  # Bajado de 3.7 a 3.5
             return "⭐⭐"
         elif score >= 2.0:
             return "⭐"
@@ -185,7 +185,7 @@ class SistemaScoring:
             return "Excelente"
         elif score >= 4.0:
             return "Muy bueno"
-        elif score >= 3.7:
+        elif score >= 3.5:  # Bajado de 3.7 a 3.5
             return "Bueno"
         elif score >= 3.0:
             return "Aceptable"

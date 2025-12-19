@@ -35,6 +35,7 @@ jobs:
         WEBHOOK_PREMIUM: ${{ secrets.DISCORD_WEBHOOK }}
         WEBHOOK_BAJOS: ${{ secrets.DISCORD_WEBHOOK2 }}
         WEBHOOK_WEEKENDS: ${{ secrets.DISCORD_WEBHOOK3 }}
+        WEBHOOK_STATUS: ${{ secrets.DISCORD_WEBHOOK_STATUS }}
         RAWG_KEY: ${{ secrets.RAWG_API_KEY }}
       run: |
         python3 << 'PYTHON_SCRIPT'
@@ -44,13 +45,14 @@ jobs:
             "webhook_premium": os.environ.get('WEBHOOK_PREMIUM', ''),
             "webhook_bajos": os.environ.get('WEBHOOK_BAJOS', ''),
             "webhook_weekends": os.environ.get('WEBHOOK_WEEKENDS', ''),
+            "webhook_status": os.environ.get('WEBHOOK_STATUS', ''),
             "enviar_discord": True,
             "rol_id": "1449938401649496176",
             "rawg_api_key": os.environ.get('RAWG_KEY', '')
         }
         with open('config.json', 'w') as f:
             json.dump(config, f)
-        print(f"✅ config.json creado con 3 webhooks")
+        print(f"✅ config.json creado con 4 webhooks")
         if config['rawg_api_key']:
             print("✅ RAWG API key configurada")
         PYTHON_SCRIPT
