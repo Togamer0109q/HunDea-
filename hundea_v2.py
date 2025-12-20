@@ -162,7 +162,9 @@ def main():
             webhook_premium = config.get('webhook_premium')
             webhook_bajos = config.get('webhook_bajos')
             webhook_weekends = config.get('webhook_weekends')
+            webhook_todos = config.get('webhook_todos')
             rol_id = config.get('rol_id')
+            rol_todos = config.get('rol_todos')
             
             if not all([webhook_premium, webhook_bajos, webhook_weekends]):
                 print("⚠️ Faltan webhooks configurados. Solo mostrando en consola.\n")
@@ -173,7 +175,9 @@ def main():
                     webhook_premium,
                     webhook_bajos,
                     webhook_weekends,
-                    rol_id
+                    webhook_todos,
+                    rol_id,
+                    rol_todos
                 )
                 
                 # Enviar juegos premium
