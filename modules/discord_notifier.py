@@ -1,6 +1,6 @@
 """
 Sistema de notificaciones de Discord para HunDea v2
-Maneja los webhooks y formatos de mensajes
+Maneja los 5 webhooks y formatos de mensajes
 """
 
 import requests
@@ -11,7 +11,17 @@ class DiscordNotifier:
     Envía notificaciones a los diferentes canales de Discord
     """
     
-    def __init__(self, webhook_premium, webhook_bajos, webhook_weekends, webhook_todos=None, rol_id=None, rol_todos=None):
+    def __init__(
+        self,
+        webhook_premium,
+        webhook_bajos,
+        webhook_weekends,
+        webhook_todos=None,
+        rol_premium=None,
+        rol_bajos=None,
+        rol_weekends=None,
+        rol_todos=None
+    ):
         """
         Inicializa el notificador
         
@@ -19,15 +29,20 @@ class DiscordNotifier:
             webhook_premium (str): Webhook del canal premium
             webhook_bajos (str): Webhook del canal bajos
             webhook_weekends (str): Webhook del canal free weekends
-            webhook_todos (str): Webhook del canal todos los juegos
-            rol_id (str): ID del rol a mencionar (específico por canal)
-            rol_todos (str): ID del rol para canal todos
+            webhook_todos (str, optional): Webhook del canal todos los juegos
+            rol_premium (str, optional): ID del rol premium
+            rol_bajos (str, optional): ID del rol bajos
+            rol_weekends (str, optional): ID del rol weekends
+            rol_todos (str, optional): ID del rol todos
         """
         self.webhook_premium = webhook_premium
         self.webhook_bajos = webhook_bajos
         self.webhook_weekends = webhook_weekends
         self.webhook_todos = webhook_todos
-        self.rol_id = rol_id
+
+        self.rol_premium = rol_premium
+        self.rol_bajos = rol_bajos
+        self.rol_weekends = rol_weekends
         self.rol_todos = rol_todos
         
         # Colores por tienda
@@ -38,30 +53,9 @@ class DiscordNotifier:
             'Itch.io': 0xFA5C5C
         }
     
-    def enviar_a_todos(self, juego, score, estrellas):
-        """
-        Envía juego al canal de TODOS los juegos
-        
-        Args:
-            juego (dict): Info del juego
-            score (float): Score del juego
-            estrellas (str): Estrellas emoji
-        
-        Returns:
-            bool: True si se envió correctamente
-        """
-        if not self.webhook_todos:
-            return False
-        
-        return self._enviar_notificacion(
-            juego, score, estrellas,
-            self.webhook_todos,
-            "todos"
-        )
-    
     def enviar_juego_premium(self, juego, score, estrellas):
         """
-        Envía juego al canal premium
+        Envía juego al canal premium Y al canal todos
         
         Args:
             juego (dict): Info del juego
@@ -69,34 +63,59 @@ class DiscordNotifier:
             estrellas (str): Estrellas emoji
         
         Returns:
-            bool: True si se envió correctamente
+            bool: True si se envió correctamente (canal premium)
         """
-        return self._enviar_notificacion(
+        enviado = self._enviar_notificacion(
             juego, score, estrellas, 
             self.webhook_premium, 
-            "premium"
+            "premium",
+            self.rol_premium
         )
+
+        # También enviar a "todos" si está configurado
+        if self.webhook_todos:
+            self._enviar_notificacion(
+                juego, score, estrellas, 
+                self.webhook_todos, 
+                "todos",
+                self.rol_todos
+            )
+        
+        return enviado
     
     def enviar_juego_bajos(self, juego, score):
         """
-        Envía juego al canal bajos
+        Envía juego al canal bajos Y al canal todos
         
         Args:
             juego (dict): Info del juego
             score (float): Score del juego
         
         Returns:
-            bool: True si se envió correctamente
+            bool: True si se envió correctamente (canal bajos)
         """
-        return self._enviar_notificacion(
-            juego, score, "⚠️", 
+        estrellas = "⚠️"
+        enviado = self._enviar_notificacion(
+            juego, score, estrellas, 
             self.webhook_bajos, 
-            "bajos"
+            "bajos",
+            self.rol_bajos
         )
+
+        # También enviar a "todos" si está configurado
+        if self.webhook_todos:
+            self._enviar_notificacion(
+                juego, score, estrellas, 
+                self.webhook_todos, 
+                "todos",
+                self.rol_todos
+            )
+        
+        return enviado
     
     def enviar_free_weekend(self, juego, score, estrellas):
         """
-        Envía free weekend al canal correspondiente
+        Envía free weekend al canal correspondiente Y al canal todos
         
         Args:
             juego (dict): Info del juego
@@ -104,15 +123,27 @@ class DiscordNotifier:
             estrellas (str): Estrellas emoji
         
         Returns:
-            bool: True si se envió correctamente
+            bool: True si se envió correctamente (canal weekend)
         """
-        return self._enviar_notificacion(
+        enviado = self._enviar_notificacion(
             juego, score, estrellas, 
             self.webhook_weekends, 
-            "weekend"
+            "weekend",
+            self.rol_weekends
         )
+
+        # También enviar a "todos" si está configurado
+        if self.webhook_todos:
+            self._enviar_notificacion(
+                juego, score, estrellas, 
+                self.webhook_todos, 
+                "todos",
+                self.rol_todos
+            )
+        
+        return enviado
     
-    def _enviar_notificacion(self, juego, score, estrellas, webhook, tipo):
+    def _enviar_notificacion(self, juego, score, estrellas, webhook, tipo, rol_id):
         """
         Envía la notificación a Discord
         
@@ -122,6 +153,7 @@ class DiscordNotifier:
             estrellas (str): Estrellas emoji
             webhook (str): URL del webhook
             tipo (str): Tipo de canal (premium, bajos, weekend, todos)
+            rol_id (str): ID del rol a mencionar
         
         Returns:
             bool: True si se envió correctamente
@@ -130,8 +162,9 @@ class DiscordNotifier:
             # Crear embed
             embed = self._crear_embed(juego, score, estrellas, tipo)
             
-            # Contenido del mensaje
-            content = self._crear_contenido_mensaje(tipo)
+            # Contenido del mensaje (pasar tienda para "todos")
+            tienda = juego.get('tienda', 'Desconocida')
+            content = self._crear_contenido_mensaje(tipo, tienda, rol_id)
             
             payload = {
                 "content": content,
@@ -170,7 +203,7 @@ class DiscordNotifier:
         
         # Título según tipo
         if tipo == "todos":
-            titulo = f"🎁 {juego['titulo']} es GRATIS"
+            titulo = f"{juego['titulo']} es GRATIS"
         elif tipo == "premium":
             titulo = f"{estrellas} {juego['titulo']}"
         elif tipo == "weekend":
@@ -228,32 +261,31 @@ class DiscordNotifier:
         
         return embed
     
-    def _crear_contenido_mensaje(self, tipo):
+    def _crear_contenido_mensaje(self, tipo, tienda=None, rol_id=None):
         """
         Crea el contenido del mensaje según el tipo
         
         Args:
             tipo (str): Tipo de canal
+            tienda (str, optional): Nombre de la tienda (usada en "todos")
+            rol_id (str, optional): ID del rol a mencionar
         
         Returns:
             str: Contenido del mensaje
         """
         if tipo == "todos":
-            content = "🎮 **¡Nuevo juego GRATIS!**"
-            if self.rol_todos:
-                content += f" <@&{self.rol_todos}>"
+            tienda_str = tienda or "la tienda"
+            content = f"🎮 **¡Nuevo juego GRATIS en {tienda_str}!**"
         elif tipo == "premium":
             content = "🎮 **¡JUEGO GRATIS de CALIDAD!**"
-            if self.rol_id:
-                content += f" <@&{self.rol_id}>"
         elif tipo == "weekend":
             content = "⏰ **¡GRATIS ESTE FIN DE SEMANA!**"
-            if self.rol_id:
-                content += f" <@&{self.rol_id}>"
         else:  # bajos
             content = "⚠️ **Juego gratis (calidad no verificada)**"
-            if self.rol_id:
-                content += f" <@&{self.rol_id}>"
+        
+        # Agregar mención de rol si existe
+        if rol_id:
+            content += f" <@&{rol_id}>"
         
         return content
     

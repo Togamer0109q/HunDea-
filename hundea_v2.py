@@ -175,9 +175,11 @@ def main():
                     webhook_premium,
                     webhook_bajos,
                     webhook_weekends,
-                    webhook_todos,
-                    rol_id,
-                    rol_todos
+                    webhook_todos=webhook_todos,
+                    rol_premium=config.get('rol_premium'),
+                    rol_bajos=config.get('rol_bajos'),
+                    rol_weekends=config.get('rol_weekends'),
+                    rol_todos=config.get('rol_todos')
                 )
                 
                 # Enviar juegos premium
