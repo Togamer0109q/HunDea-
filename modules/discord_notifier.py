@@ -149,6 +149,110 @@ class DiscordNotifier:
         
         return enviado
     
+    def enviar_oferta_descuento(self, juego, score, estrellas):
+        """
+        Envía una oferta con descuento al canal de deals
+        
+        Args:
+            juego (dict): Información del juego
+            score (float): Score calculado
+            estrellas (str): Representación en estrellas
+        
+        Returns:
+            bool: True si se envió correctamente
+        """
+        if not self.webhook_deals:
+            print("⚠️  Webhook de deals no configurado")
+            return False
+        
+        try:
+            # Formatear precio
+            precio_actual = juego.get('precio_actual', 0)
+            precio_regular = juego.get('precio_regular', 0)
+            descuento = juego.get('descuento_porcentaje', 0)
+            moneda = juego.get('moneda', 'USD')
+            
+            simbolo_moneda = '$' if moneda == 'USD' else moneda
+            
+            # Crear mensaje
+            content = f"💰 **¡GRAN DESCUENTO (-{descuento}%)!**"
+            if self.rol_deals:
+                content += f" <@&{self.rol_deals}>"
+            
+            # Crear embed
+            color = self.colores_tienda.get(juego['tienda'], 0x00D9FF)
+            
+            embed = {
+                "title": f"💸 {juego['titulo']}",
+                "url": juego['url'],
+                "color": color,
+                "fields": [
+                    {
+                        "name": "🏪 Tienda",
+                        "value": f"{juego.get('tienda_emoji', '')} {juego['tienda']}",
+                        "inline": True
+                    },
+                    {
+                        "name": "💰 Precio",
+                        "value": f"~~{simbolo_moneda}{precio_regular:.2f}~~ → **{simbolo_moneda}{precio_actual:.2f}**",
+                        "inline": True
+                    },
+                    {
+                        "name": "📊 Descuento",
+                        "value": f"**-{descuento}%**",
+                        "inline": True
+                    },
+                    {
+                        "name": "📊 Score HunDea",
+                        "value": f"{score:.1f}/5.0 {estrellas}",
+                        "inline": True
+                    }
+                ],
+                "footer": {
+                    "text": "HunDea v2.6 • Ofertas de Calidad"
+                },
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+            # Reviews si existen
+            if juego.get('reviews_percent'):
+                embed['fields'].append({
+                    "name": "⭐ Reviews",
+                    "value": f"{juego['reviews_percent']}% Positivas ({juego['reviews_count']:,} reviews)",
+                    "inline": False
+                })
+            
+            # Fecha de fin
+            if juego.get('fecha_fin'):
+                embed['fields'].append({
+                    "name": "⏰ Disponible hasta",
+                    "value": juego['fecha_fin'],
+                    "inline": False
+                })
+            
+            # Imagen
+            if juego.get('imagen_url'):
+                embed['image'] = {"url": juego['imagen_url']}
+            
+            # Enviar
+            payload = {
+                "content": content,
+                "embeds": [embed]
+            }
+            
+            response = requests.post(self.webhook_deals, json=payload)
+            
+            if response.status_code == 204:
+                print(f"✅ Oferta enviada: {juego['titulo']} (-{descuento}%)")
+                return True
+            else:
+                print(f"❌ Error al enviar oferta: {response.status_code}")
+                return False
+        
+        except Exception as e:
+            print(f"❌ Error al enviar oferta: {e}")
+            return False
+    
     def _enviar_notificacion(self, juego, score, estrellas, webhook, tipo, rol_id):
         """
         Envía la notificación a Discord
@@ -230,7 +334,7 @@ class DiscordNotifier:
                 }
             ],
             "footer": {
-                "text": "HunDea v2 • Multi-Store Free Games Hunter"
+                "text": "HunDea v2.6 • Multi-Store Free Games Hunter"
             },
             "timestamp": datetime.utcnow().isoformat()
         }
@@ -294,111 +398,6 @@ class DiscordNotifier:
             content += f" <@&{rol_id}>"
         
         return content
-    
-    def enviar_oferta_descuento(self, juego, score, estrellas):
-        """
-        Envía una oferta con descuento al canal de deals
-        
-        Args:
-            juego (dict): Información del juego
-            score (float): Score calculado
-            estrellas (str): Representación en estrellas
-        
-        Returns:
-            bool: True si se envió correctamente
-        """
-        if not self.webhook_deals:
-            print("⚠️  Webhook de deals no configurado")
-            return False
-        
-        try:
-            # Formatear precio
-            precio_actual = juego.get('precio_actual', 0)
-            precio_regular = juego.get('precio_regular', 0)
-            descuento = juego.get('descuento_porcentaje', 0)
-            moneda = juego.get('moneda', 'USD')
-            
-           simbolo_moneda = '$' if moneda == 'USD' else moneda
- if moneda == 'USD' else moneda
-            
-            # Crear mensaje
-            content = f"💰 **¡GRAN DESCUENTO (-{descuento}%)!**"
-            if self.rol_deals:
-                content += f" <@&{self.rol_deals}>"
-            
-            # Crear embed
-            color = self.colores_tienda.get(juego['tienda'], 0x00D9FF)
-            
-            embed = {
-                "title": f"💸 {juego['titulo']}",
-                "url": juego['url'],
-                "color": color,
-                "fields": [
-                    {
-                        "name": "🏪 Tienda",
-                        "value": f"{juego.get('tienda_emoji', '')} {juego['tienda']}",
-                        "inline": True
-                    },
-                    {
-                        "name": "💰 Precio",
-                        "value": f"~~{simbolo_moneda}{precio_regular:.2f}~~ → **{simbolo_moneda}{precio_actual:.2f}**",
-                        "inline": True
-                    },
-                    {
-                        "name": "📊 Descuento",
-                        "value": f"**-{descuento}%**",
-                        "inline": True
-                    },
-                    {
-                        "name": "📊 Score HunDea",
-                        "value": f"{score:.1f}/5.0 {estrellas}",
-                        "inline": True
-                    }
-                ],
-                "footer": {
-                    "text": "HunDea v2.5 • Ofertas de Calidad"
-                },
-                "timestamp": datetime.utcnow().isoformat()
-            }
-            
-            # Reviews si existen
-            if juego.get('reviews_percent'):
-                embed['fields'].append({
-                    "name": "⭐ Reviews",
-                    "value": f"{juego['reviews_percent']}% Positivas ({juego['reviews_count']:,} reviews)",
-                    "inline": False
-                })
-            
-            # Fecha de fin
-            if juego.get('fecha_fin'):
-                embed['fields'].append({
-                    "name": "⏰ Disponible hasta",
-                    "value": juego['fecha_fin'],
-                    "inline": False
-                })
-            
-            # Imagen
-            if juego.get('imagen_url'):
-                embed['image'] = {"url": juego['imagen_url']}
-            
-            # Enviar
-            payload = {
-                "content": content,
-                "embeds": [embed]
-            }
-            
-            response = requests.post(self.webhook_deals, json=payload)
-            
-            if response.status_code == 204:
-                print(f"✅ Oferta enviada: {juego['titulo']} (-{descuento}%)")
-                return True
-            else:
-                print(f"❌ Error al enviar oferta: {response.status_code}")
-                return False
-        
-        except Exception as e:
-            print(f"❌ Error al enviar oferta: {e}")
-            return False
     
     def _fecha_a_timestamp(self, fecha_str):
         """
