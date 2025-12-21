@@ -35,6 +35,7 @@ jobs:
         WEBHOOK_PREMIUM: ${{ secrets.DISCORD_WEBHOOK }}
         WEBHOOK_BAJOS: ${{ secrets.DISCORD_WEBHOOK2 }}
         WEBHOOK_WEEKENDS: ${{ secrets.DISCORD_WEBHOOK3 }}
+        WEBHOOK_DESCUENTOS: ${{ secrets.HUN_DEA_DESCUENTOS }}
         WEBHOOK_STATUS: ${{ secrets.DISCORD_WEBHOOK_STATUS }}
         WEBHOOK_TODOS: ${{ secrets.DISCORD_WEBHOOK_ALL }}
         RAWG_KEY: ${{ secrets.RAWG_API_KEY }}
@@ -46,20 +47,26 @@ jobs:
             "webhook_premium": os.environ.get('WEBHOOK_PREMIUM', ''),
             "webhook_bajos": os.environ.get('WEBHOOK_BAJOS', ''),
             "webhook_weekends": os.environ.get('WEBHOOK_WEEKENDS', ''),
+            "webhook_deals": os.environ.get('WEBHOOK_DESCUENTOS', ''),
             "webhook_todos": os.environ.get('WEBHOOK_TODOS', ''),
             "webhook_status": os.environ.get('WEBHOOK_STATUS', ''),
             "enviar_discord": True,
             "rol_premium": "1449938401649496176",
             "rol_bajos": "1449942355997360259",
             "rol_weekends": "1449942459894202369",
+            "rol_deals": "TU_ROL_DESCUENTOS_AQUI",
             "rol_todos": "1451738702262046750",
-            "rawg_api_key": os.environ.get('RAWG_KEY', '')
+            "rawg_api_key": os.environ.get('RAWG_KEY', ''),
+            "deals_descuento_minimo": 70,
+            "deals_score_minimo": 3.6
         }
         with open('config.json', 'w') as f:
             json.dump(config, f)
-        print(f"✅ config.json creado con 5 webhooks")
+        print(f"✅ config.json creado con 6 webhooks")
         if config['rawg_api_key']:
             print("✅ RAWG API key configurada")
+        if config['webhook_deals']:
+            print("✅ Webhook de descuentos configurado")
         PYTHON_SCRIPT
     
     - name: 🎮 Ejecutar HunDea v2

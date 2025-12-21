@@ -89,10 +89,38 @@ git push
 
 ---
 
+## 🌟 Novedades v2.5 - IsThereAnyDeal
+
+**¡Ahora con 13+ tiendas soportadas!**
+
+IsThereAnyDeal API ahora está integrado y NO requiere API key adicional.
+Busca juegos gratis en:
+- Steam
+- GOG
+- Humble Store
+- Epic Games (duplicado con Epic Hunter)
+- Itch.io
+- Microsoft Store
+- Ubisoft Connect
+- EA Origin
+- Y más...
+
+**Cómo probar ITAD:**
+
+```bash
+python test_itad.py
+```
+
+Esto te mostrará todos los juegos gratis encontrados en múltiples tiendas.
+
+---
+
 ## 🎯 Próximos pasos
 
-Una vez funcionando con Epic + RAWG:
-- [ ] Agregar Steam real (con scraping o mejor API)
-- [ ] Agregar GOG giveaways
-- [ ] Agregar Itch.io bundles
+Una vez funcionando con Epic + ITAD + RAWG:
+- [x] Agregar GOG (vía ITAD) ✅
+- [x] Agregar Itch.io bundles (vía ITAD) ✅
+- [x] Agregar Humble Store (vía ITAD) ✅
 - [ ] Mejorar matching de nombres de juegos
+- [ ] Agregar Prime Gaming
+- [ ] Sistema de notificaciones por juego específico

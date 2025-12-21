@@ -2,13 +2,18 @@
 
 Bot inteligente que detecta juegos gratis de múltiples tiendas y los clasifica automáticamente por calidad.
 
-## ✨ Características v2
+## ✨ Características v2.6
 
 ✅ **Múltiples tiendas**
 - Epic Games Store ✅
-- Steam (en desarrollo)
-- GOG (en desarrollo)
+- IsThereAnyDeal (Steam, GOG, Humble, Uplay, etc.) 🌟
+- 13+ tiendas soportadas vía ITAD
 - RAWG para reviews externas ✅
+
+💰 **Sistema de Ofertas** 🆕 NUEVO
+- Detecta ofertas con 70%+ descuento
+- Solo juegos de calidad (3.6+ score)
+- Notificaciones en canal dedicado
 
 ✅ **Sistema de puntuación inteligente**
 - Reviews de usuarios
@@ -16,9 +21,10 @@ Bot inteligente que detecta juegos gratis de múltiples tiendas y los clasifica 
 - Metacritic
 - Score de 0.0 a 5.0
 
-✅ **3 canales de Discord**
-- **Premium** (Score 3.7+): Juegos de calidad comprobada
-- **Bajos** (Score <3.7): Juegos sin reviews o calidad dudosa
+✅ **4 canales de Discord**
+- **Premium** (Score 3.7+): Juegos GRATIS de calidad comprobada
+- **Bajos** (Score <3.7): Juegos GRATIS sin reviews o calidad dudosa
+- **Deals** (70%+ off, 3.6+ score): Ofertas con descuento 🆕
 - **Free Weekends**: Juegos gratis temporalmente
 
 ✅ **Automatizado 24/7**
@@ -38,7 +44,7 @@ pip install -r requirements.txt
 
 ### 2. Obtén tu RAWG API Key (IMPORTANTE)
 
-**¿Por qué?** RAWG proporciona reviews y ratings para juegos de Epic Games.
+**¿Por qué?** RAWG proporciona reviews y ratings para juegos de todas las tiendas.
 
 1. Ve a: https://rawg.io/apidocs
 2. Click en **Get API Key** (arriba derecha)
@@ -51,12 +57,16 @@ pip install -r requirements.txt
 ### 3. Configura los 3 webhooks de Discord
 
 **Canal #gamesdeals (Premium)**
-- Juegos con score 3.7+ 
+- Juegos GRATIS con score 3.7+ 
 - Copiar webhook → GitHub Secret: `DISCORD_WEBHOOK`
 
 **Canal #gameslowers (Bajos)**
-- Juegos con score <3.7
+- Juegos GRATIS con score <3.7
 - Copiar webhook → GitHub Secret: `DISCORD_WEBHOOK2`
+
+**Canal #gamedeals (Ofertas)** 🆕
+- Ofertas 70%+ con score 3.6+
+- Copiar webhook → GitHub Secret: `DISCORD_WEBHOOK_DEALS`
 
 **Canal #xfreeweekends**
 - Free weekends de Steam
@@ -162,10 +172,12 @@ HunDeaBot/
 
 ## 🔧 Próximas características v3
 
-- [ ] Soporte para GOG
-- [ ] Soporte para Itch.io
+- [x] Soporte para GOG (vía ITAD)
+- [x] Soporte para Itch.io (vía ITAD)
+- [x] Soporte para Humble Store (vía ITAD)
+- [x] Soporte para Ubisoft Connect (vía ITAD)
 - [ ] Soporte para Prime Gaming
-- [ ] Integración con RAWG API para más reviews
+- [x] Integración con RAWG API para más reviews
 - [ ] Metacritic scraping
 - [ ] Filtros personalizados por usuario
 - [ ] Estadísticas mensuales
@@ -174,7 +186,24 @@ HunDeaBot/
 
 ## 📝 Changelog
 
-### v2.0.0 (Actual)
+### v2.6.0 (Actual)
+- 💰 Sistema de ofertas con descuento (70%+, 3.6+)
+- 🆕 Nuevo canal #gamedeals para ofertas
+- 🌟 IsThereAnyDeal API integrado (13+ tiendas)
+- ✅ Soporte multi-tienda (Epic + ITAD)
+- ✅ Sistema de puntuación inteligente
+- ✅ 4 canales de Discord
+- ✅ Arquitectura modular
+
+### v2.5.0
+- 🌟 IsThereAnyDeal API integrado (13+ tiendas)
+- ✅ Soporte multi-tienda (Epic + ITAD)
+- ✅ Sistema de puntuación inteligente
+- ✅ 3 canales de Discord
+- ✅ Arquitectura modular
+- ✅ Free Weekends de Steam
+
+### v2.0.0
 - ✅ Soporte multi-tienda (Epic + Steam)
 - ✅ Sistema de puntuación inteligente
 - ✅ 3 canales de Discord

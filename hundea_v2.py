@@ -11,6 +11,7 @@ import json
 import sys
 from modules.epic_hunter import EpicHunter
 from modules.steam_hunter import SteamHunter
+from modules.itad_hunter import IsThereAnyDealHunter
 from modules.scoring import SistemaScoring
 from modules.discord_notifier import DiscordNotifier
 from modules.reviews_externas import ReviewsExternas
@@ -70,6 +71,7 @@ def main():
         # Inicializar detectores
         epic_hunter = EpicHunter()
         steam_hunter = SteamHunter()
+        itad_hunter = IsThereAnyDealHunter()
         scoring = SistemaScoring()
         
         # Reviews externas con API key si está configurado
@@ -97,6 +99,33 @@ def main():
         
         todos_juegos.extend(juegos_epic)
         
+        # IsThereAnyDeal (múltiples tiendas) - GRATIS
+        print("\n🌟 Buscando juegos GRATIS en múltiples tiendas con ITAD...")
+        juegos_itad = itad_hunter.obtener_juegos_gratis()
+        
+        # Buscar reviews externas para juegos de ITAD
+        for juego in juegos_itad:
+            if 'reviews_count' not in juego or not juego.get('reviews_count'):
+                print(f"   🔍 Buscando reviews para: {juego['titulo']}")
+                reviews = reviews_externas.buscar_reviews(juego['titulo'], juego['tienda'])
+                if reviews:
+                    juego.update(reviews)
+        
+        todos_juegos.extend(juegos_itad)
+        
+        # IsThereAnyDeal - OFERTAS CON DESCUENTO
+        descuento_minimo = config.get('deals_descuento_minimo', 70)
+        print(f"\n💰 Buscando OFERTAS con {descuento_minimo}%+ descuento...")
+        ofertas_itad = itad_hunter.obtener_ofertas_descuento(descuento_minimo)
+        
+        # Buscar reviews para ofertas
+        for juego in ofertas_itad:
+            if 'reviews_count' not in juego or not juego.get('reviews_count'):
+                print(f"   🔍 Buscando reviews para: {juego['titulo']}")
+                reviews = reviews_externas.buscar_reviews(juego['titulo'], juego['tienda'])
+                if reviews:
+                    juego.update(reviews)
+        
         # Steam (temporalmente desactivado - requiere mejor implementación)
         # juegos_steam = steam_hunter.obtener_juegos_gratis()
         # todos_juegos.extend(juegos_steam)
@@ -106,10 +135,11 @@ def main():
         free_weekends = []
         
         print(f"\n📊 Total encontrado: {len(todos_juegos)} juego(s) gratis")
+        print(f"💰 Ofertas: {len(ofertas_itad)} oferta(s) con descuento")
         print(f"⏰ Free Weekends: {len(free_weekends)} juego(s)\n")
         
-        if not todos_juegos and not free_weekends:
-            print("✅ No hay juegos gratis nuevos por ahora\n")
+        if not todos_juegos and not free_weekends and not ofertas_itad:
+            print("✅ No hay juegos gratis ni ofertas nuevas por ahora\n")
             
             # Notificar éxito (aunque no haya juegos nuevos)
             if status_notifier:
@@ -120,6 +150,10 @@ def main():
         # Procesar juegos regulares
         juegos_premium = []
         juegos_bajos = []
+        
+        # Procesar ofertas con descuento (solo las de calidad 3.6+)
+        ofertas_calidad = []
+        score_minimo_deals = config.get('deals_score_minimo', 3.6)
         
         for juego in todos_juegos:
             # Calcular score
@@ -148,23 +182,47 @@ def main():
             print(f"   🔗 {juego['url']}")
             print(f"   {'─'*60}")
         
+        # Procesar ofertas con descuento
+        for juego in ofertas_itad:
+            score = scoring.calcular_score(juego)
+            estrellas = scoring.obtener_estrellas(score)
+            
+            juego['score'] = score
+            juego['estrellas'] = estrellas
+            
+            # Solo ofertas de calidad 3.6+
+            if score >= score_minimo_deals:
+                ofertas_calidad.append(juego)
+                
+                print(f"💰 {juego['titulo']}")
+                print(f"   🏪 {juego['tienda']} | 📊 {score:.1f}/5.0 ({estrellas})")
+                print(f"   💸 -{juego.get('descuento_porcentaje', 0)}% | ${juego.get('precio_actual', 0):.2f}")
+                if juego.get('reviews_percent'):
+                    print(f"   ⭐ {juego['reviews_percent']}% ({juego['reviews_count']:,} reviews)")
+                print(f"   🔗 {juego['url']}")
+                print(f"   {'─'*60}")
+        
         # Mostrar resumen
         print(f"\n📈 Resumen:")
         print(f"   ⭐ Premium (3.5+): {len(juegos_premium)} juego(s)")
         print(f"   ⚠️  Bajos (<3.5): {len(juegos_bajos)} juego(s)")
+        print(f"   💰 Ofertas Calidad (3.6+): {len(ofertas_calidad)} oferta(s)")
         print(f"   ⏰ Free Weekends: {len(free_weekends)} juego(s)\n")
         
         # Enviar a Discord si está configurado
         enviados_premium = 0
         enviados_bajos = 0
+        enviados_deals = 0
         
         if config.get('enviar_discord'):
             webhook_premium = config.get('webhook_premium')
             webhook_bajos = config.get('webhook_bajos')
             webhook_weekends = config.get('webhook_weekends')
+            webhook_deals = config.get('webhook_deals')
             webhook_todos = config.get('webhook_todos')
             rol_id = config.get('rol_id')
             rol_todos = config.get('rol_todos')
+            rol_deals = config.get('rol_deals')
             
             if not all([webhook_premium, webhook_bajos, webhook_weekends]):
                 print("⚠️ Faltan webhooks configurados. Solo mostrando en consola.\n")
@@ -175,10 +233,12 @@ def main():
                     webhook_premium,
                     webhook_bajos,
                     webhook_weekends,
+                    webhook_deals=webhook_deals,
                     webhook_todos=webhook_todos,
                     rol_premium=config.get('rol_premium'),
                     rol_bajos=config.get('rol_bajos'),
                     rol_weekends=config.get('rol_weekends'),
+                    rol_deals=config.get('rol_deals'),
                     rol_todos=config.get('rol_todos')
                 )
                 
@@ -211,14 +271,26 @@ def main():
                     else:
                         print(f"⏭️  Saltando {juego['titulo']} (ya anunciado)")
                 
+                # Enviar ofertas con descuento
+                if webhook_deals:
+                    for juego in ofertas_calidad:
+                        deal_id = f"{juego['id']}_deal"
+                        if deal_id not in cache['juegos_anunciados']:
+                            if notifier.enviar_oferta_descuento(juego, juego['score'], juego['estrellas']):
+                                cache['juegos_anunciados'].append(deal_id)
+                                enviados_deals += 1
+                        else:
+                            print(f"⏭️  Saltando oferta {juego['titulo']} (ya anunciado)")
+                
                 # Guardar cache
                 guardar_cache(cache)
                 
-                total_enviados = enviados_premium + enviados_bajos
+                total_enviados = enviados_premium + enviados_bajos + enviados_deals
                 if total_enviados > 0:
                     print(f"\n🎉 {total_enviados} alerta(s) enviada(s) a Discord")
                     print(f"   • Premium: {enviados_premium}")
                     print(f"   • Bajos: {enviados_bajos}")
+                    print(f"   • Ofertas: {enviados_deals}")
                 else:
                     print("\n✅ Todos los juegos ya habían sido anunciados")
         
