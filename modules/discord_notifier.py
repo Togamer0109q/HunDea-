@@ -318,7 +318,7 @@ class DiscordNotifier:
             descuento = juego.get('descuento_porcentaje', 0)
             moneda = juego.get('moneda', 'USD')
             
-            simbolo_moneda = '
+           simbolo_moneda = '$' if moneda == 'USD' else moneda
  if moneda == 'USD' else moneda
             
             # Crear mensaje
