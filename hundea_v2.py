@@ -12,6 +12,7 @@ import sys
 from modules.epic_hunter import EpicHunter
 from modules.steam_hunter import SteamHunter
 from modules.itad_hunter import IsThereAnyDealHunter
+from modules.cheapshark_hunter import CheapSharkHunter
 from modules.scoring import SistemaScoring
 from modules.discord_notifier import DiscordNotifier
 from modules.reviews_externas import ReviewsExternas
@@ -41,6 +42,39 @@ def guardar_cache(cache):
     """Guarda cache"""
     with open('cache.json', 'w', encoding='utf-8') as f:
         json.dump(cache, f, indent=2, ensure_ascii=False)
+
+def eliminar_duplicados(juegos_lista):
+    """
+    Elimina juegos duplicados basándose en el título
+    Mantiene el que tenga mejor información (más reviews o mejor precio)
+    
+    Args:
+        juegos_lista (list): Lista de juegos
+    
+    Returns:
+        list: Lista sin duplicados
+    """
+    vistos = {}
+    
+    for juego in juegos_lista:
+        titulo = juego['titulo'].lower().strip()
+        
+        # Si no lo hemos visto, agregarlo
+        if titulo not in vistos:
+            vistos[titulo] = juego
+        else:
+            # Ya existe, decidir cuál mantener
+            juego_existente = vistos[titulo]
+            
+            # Para ofertas, mantener el de mejor precio
+            if juego.get('precio_actual') is not None:
+                if juego['precio_actual'] < juego_existente.get('precio_actual', float('inf')):
+                    vistos[titulo] = juego
+            # Para juegos gratis, mantener el que tenga más reviews
+            elif juego.get('reviews_count', 0) > juego_existente.get('reviews_count', 0):
+                vistos[titulo] = juego
+    
+    return list(vistos.values())
 
 def main():
     """Función principal de HunDea v2"""
@@ -72,6 +106,7 @@ def main():
         epic_hunter = EpicHunter()
         steam_hunter = SteamHunter()
         itad_hunter = IsThereAnyDealHunter()
+        cheapshark_hunter = CheapSharkHunter()
         scoring = SistemaScoring()
         
         # Reviews externas con API key si está configurado
@@ -113,18 +148,67 @@ def main():
         
         todos_juegos.extend(juegos_itad)
         
+        # CheapShark - Juegos Gratis
+        print("\n🦈 Buscando juegos GRATIS en CheapShark...")
+        juegos_cheapshark = cheapshark_hunter.obtener_juegos_gratis()
+        
+        # Buscar reviews para juegos de CheapShark
+        for juego in juegos_cheapshark:
+            if not juego.get('reviews_count'):
+                print(f"   🔍 Buscando reviews para: {juego['titulo']}")
+                reviews = reviews_externas.buscar_reviews(juego['titulo'], juego['tienda'])
+                if reviews:
+                    juego.update(reviews)
+        
+        todos_juegos.extend(juegos_cheapshark)
+        
+        # Eliminar duplicados en juegos gratis
+        print(f"\n🗑️ Eliminando duplicados en juegos gratis...")
+        juegos_antes = len(todos_juegos)
+        todos_juegos = eliminar_duplicados(todos_juegos)
+        duplicados_removidos = juegos_antes - len(todos_juegos)
+        if duplicados_removidos > 0:
+            print(f"   ✅ Removidos {duplicados_removidos} duplicado(s)")
+            print(f"   📊 Total juegos únicos: {len(todos_juegos)}")
+        
         # IsThereAnyDeal - OFERTAS CON DESCUENTO
         descuento_minimo = config.get('deals_descuento_minimo', 70)
-        print(f"\n💰 Buscando OFERTAS con {descuento_minimo}%+ descuento...")
+        precio_maximo_deals = config.get('deals_precio_maximo', 10)
+        
+        print(f"\n💰 Buscando OFERTAS con {descuento_minimo}%+ descuento en ITAD...")
         ofertas_itad = itad_hunter.obtener_ofertas_descuento(descuento_minimo)
         
-        # Buscar reviews para ofertas
+        # Buscar reviews para ofertas de ITAD
         for juego in ofertas_itad:
             if 'reviews_count' not in juego or not juego.get('reviews_count'):
                 print(f"   🔍 Buscando reviews para: {juego['titulo']}")
                 reviews = reviews_externas.buscar_reviews(juego['titulo'], juego['tienda'])
                 if reviews:
                     juego.update(reviews)
+        
+        # CheapShark - Ofertas con Descuento
+        print(f"\n🦈 Buscando OFERTAS con {descuento_minimo}%+ descuento en CheapShark...")
+        ofertas_cheapshark = cheapshark_hunter.obtener_ofertas_descuento(descuento_minimo, precio_maximo_deals)
+        
+        # Buscar reviews para ofertas de CheapShark
+        for juego in ofertas_cheapshark:
+            if not juego.get('reviews_count'):
+                print(f"   🔍 Buscando reviews para: {juego['titulo']}")
+                reviews = reviews_externas.buscar_reviews(juego['titulo'], juego['tienda'])
+                if reviews:
+                    juego.update(reviews)
+        
+        # Combinar todas las ofertas
+        ofertas_itad.extend(ofertas_cheapshark)
+        
+        # Eliminar duplicados (mantener el de mejor precio)
+        print(f"\n🗑️ Eliminando duplicados...")
+        ofertas_antes = len(ofertas_itad)
+        ofertas_itad = eliminar_duplicados(ofertas_itad)
+        duplicados_removidos = ofertas_antes - len(ofertas_itad)
+        if duplicados_removidos > 0:
+            print(f"   ✅ Removidos {duplicados_removidos} duplicado(s)")
+            print(f"   📊 Total ofertas únicas: {len(ofertas_itad)}")
         
         # Steam (temporalmente desactivado - requiere mejor implementación)
         # juegos_steam = steam_hunter.obtener_juegos_gratis()

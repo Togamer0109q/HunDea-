@@ -2,12 +2,13 @@
 
 Bot inteligente que detecta juegos gratis de múltiples tiendas y los clasifica automáticamente por calidad.
 
-## ✨ Características v2.6
+## ✨ Características v2.7
 
 ✅ **Múltiples tiendas**
 - Epic Games Store ✅
 - IsThereAnyDeal (Steam, GOG, Humble, Uplay, etc.) 🌟
-- 13+ tiendas soportadas vía ITAD
+- CheapShark (13+ tiendas adicionales) 🦈 NUEVO
+- 25+ tiendas soportadas en total
 - RAWG para reviews externas ✅
 
 💰 **Sistema de Ofertas** 🆕 NUEVO
@@ -186,7 +187,14 @@ HunDeaBot/
 
 ## 📝 Changelog
 
-### v2.6.0 (Actual)
+### v2.7.0 (Actual)
+- 🦈 Integración de CheapShark API
+- 🏪 13+ tiendas adicionales (Steam, GOG, Epic, GMG, Fanatical, etc.)
+- 💰 Más ofertas detectadas automáticamente
+- 🎖️ Doble cobertura: ITAD + CheapShark
+- ✅ Reviews de Steam integradas desde CheapShark
+
+### v2.6.0
 - 💰 Sistema de ofertas con descuento (70%+, 3.6+)
 - 🆕 Nuevo canal #gamedeals para ofertas
 - 🌟 IsThereAnyDeal API integrado (13+ tiendas)

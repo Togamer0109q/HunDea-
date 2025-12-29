@@ -2,8 +2,10 @@ name: HunDea v2 - Multi-Store Hunter
 
 on:
   schedule:
-    # Se ejecuta cada 3 horas
-    - cron: '0 */3 * * *'
+    # Se ejecuta cada 3 horas empezando a las 12:00 PM Colombia
+    # Horario Colombia: 12PM, 3PM, 6PM, 9PM, 12AM, 3AM, 6AM, 9AM
+    # Horario UTC: 5PM, 8PM, 11PM, 2AM, 5AM, 8AM, 11AM, 2PM
+    - cron: '0 2,5,8,11,14,17,20,23 * * *'
   
   # También permite ejecución manual desde GitHub
   workflow_dispatch:
@@ -54,10 +56,11 @@ jobs:
             "rol_premium": "1449938401649496176",
             "rol_bajos": "1449942355997360259",
             "rol_weekends": "1449942459894202369",
-            "rol_deals": "TU_ROL_DESCUENTOS_AQUI",
+            "rol_deals": "1454277753187598509",
             "rol_todos": "1451738702262046750",
             "rawg_api_key": os.environ.get('RAWG_KEY', ''),
-            "deals_descuento_minimo": 70,
+            "deals_descuento_minimo": 40,
+            "deals_precio_maximo": 10,
             "deals_score_minimo": 3.6
         }
         with open('config.json', 'w') as f:

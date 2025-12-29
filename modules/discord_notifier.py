@@ -209,7 +209,7 @@ class DiscordNotifier:
                     }
                 ],
                 "footer": {
-                    "text": "HunDea v2.6 • Ofertas de Calidad"
+                    "text": "HunDea v2.7 • Ofertas de Calidad"
                 },
                 "timestamp": datetime.utcnow().isoformat()
             }
@@ -323,7 +323,6 @@ class DiscordNotifier:
         
         embed = {
             "title": titulo,
-            "description": juego['descripcion'][:200] + "..." if len(juego['descripcion']) > 200 else juego['descripcion'],
             "url": juego['url'],
             "color": color,
             "fields": [
@@ -334,10 +333,15 @@ class DiscordNotifier:
                 }
             ],
             "footer": {
-                "text": "HunDea v2.6 • Multi-Store Free Games Hunter"
+                "text": "HunDea v2.7 • Multi-Store Free Games Hunter"
             },
             "timestamp": datetime.utcnow().isoformat()
         }
+        
+        # Agregar descripción solo si existe
+        if juego.get('descripcion'):
+            desc = juego['descripcion']
+            embed["description"] = desc[:200] + "..." if len(desc) > 200 else desc
         
         # Agregar score solo si NO es el canal "todos"
         if tipo != "todos":
