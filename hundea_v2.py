@@ -201,6 +201,26 @@ def main():
         # Combinar todas las ofertas
         ofertas_itad.extend(ofertas_cheapshark)
         
+        # Separar ofertas 100% descuento (son GRATIS)
+        print(f"\n🎁 Separando ofertas 100% descuento como GRATIS...")
+        ofertas_100 = []
+        ofertas_con_descuento = []
+        
+        for oferta in ofertas_itad:
+            if oferta.get('descuento_porcentaje', 0) >= 100:
+                # 100% descuento = GRATIS
+                oferta['tipo'] = 'gratis'
+                ofertas_100.append(oferta)
+            else:
+                ofertas_con_descuento.append(oferta)
+        
+        if ofertas_100:
+            print(f"   🎉 {len(ofertas_100)} oferta(s) 100% movidas a canal GRATIS")
+            todos_juegos.extend(ofertas_100)
+        
+        # Actualizar lista de ofertas (sin las 100%)
+        ofertas_itad = ofertas_con_descuento
+        
         # Eliminar duplicados (mantener el de mejor precio)
         print(f"\n🗑️ Eliminando duplicados...")
         ofertas_antes = len(ofertas_itad)

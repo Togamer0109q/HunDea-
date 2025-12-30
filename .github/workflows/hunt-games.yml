@@ -60,8 +60,8 @@ jobs:
             "rol_todos": "1451738702262046750",
             "rawg_api_key": os.environ.get('RAWG_KEY', ''),
             "deals_descuento_minimo": 40,
-            "deals_precio_maximo": 10,
-            "deals_score_minimo": 3.6
+            "deals_precio_maximo": 20,
+            "deals_score_minimo": 2.5
         }
         with open('config.json', 'w') as f:
             json.dump(config, f)

@@ -370,8 +370,9 @@ class DiscordNotifier:
                 })
         
         # Agregar imagen
-        if juego.get('imagen'):
-            embed["image"] = {"url": juego['imagen']}
+        if juego.get('imagen') or juego.get('imagen_url'):
+            imagen = juego.get('imagen') or juego.get('imagen_url')
+            embed["image"] = {"url": imagen}
         
         return embed
     
