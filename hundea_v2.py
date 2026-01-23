@@ -43,9 +43,52 @@ def guardar_cache(cache):
     with open('cache.json', 'w', encoding='utf-8') as f:
         json.dump(cache, f, indent=2, ensure_ascii=False)
 
+def normalizar_titulo(titulo):
+    """
+    Normaliza títulos para comparación
+    Elimina caracteres especiales, artículos, etc.
+    """
+    import re
+    
+    # Convertir a minúsculas
+    titulo = titulo.lower().strip()
+    
+    # Extraer contenido de paréntesis y agregarlo al título
+    # "Rustler (Grand Theft Horse)" → "Rustler Grand Theft Horse"
+    parentesis_content = re.findall(r'\(([^)]*)\)', titulo)
+    for contenido in parentesis_content:
+        titulo = titulo.replace(f'({contenido})', contenido)
+    
+    # Eliminar caracteres especiales comunes
+    titulo = titulo.replace('-', ' ')
+    titulo = titulo.replace(':', ' ')
+    titulo = titulo.replace('_', ' ')
+    
+    # Eliminar palabras comunes al final
+    sufijos = [' es gratis', ' is free', ' gratis', ' free']
+    for sufijo in sufijos:
+        if titulo.endswith(sufijo):
+            titulo = titulo[:-len(sufijo)]
+    
+    # Eliminar artículos al inicio
+    articulos_inicio = ['the ', 'a ', 'an ', 'el ', 'la ', 'los ', 'las ']
+    for articulo in articulos_inicio:
+        if titulo.startswith(articulo):
+            titulo = titulo[len(articulo):]
+            break
+    
+    # Eliminar artículos en medio (con espacios a los lados)
+    for articulo in [' the ', ' a ', ' an ', ' el ', ' la ', ' los ', ' las ']:
+        titulo = titulo.replace(articulo, ' ')
+    
+    # Eliminar espacios múltiples
+    titulo = ' '.join(titulo.split())
+    
+    return titulo.strip()
+
 def eliminar_duplicados(juegos_lista):
     """
-    Elimina juegos duplicados basándose en el título
+    Elimina juegos duplicados basándose en el título normalizado
     Mantiene el que tenga mejor información (más reviews o mejor precio)
     
     Args:
@@ -57,22 +100,23 @@ def eliminar_duplicados(juegos_lista):
     vistos = {}
     
     for juego in juegos_lista:
-        titulo = juego['titulo'].lower().strip()
+        # Normalizar título para comparación
+        titulo_norm = normalizar_titulo(juego['titulo'])
         
         # Si no lo hemos visto, agregarlo
-        if titulo not in vistos:
-            vistos[titulo] = juego
+        if titulo_norm not in vistos:
+            vistos[titulo_norm] = juego
         else:
             # Ya existe, decidir cuál mantener
-            juego_existente = vistos[titulo]
+            juego_existente = vistos[titulo_norm]
             
             # Para ofertas, mantener el de mejor precio
             if juego.get('precio_actual') is not None:
                 if juego['precio_actual'] < juego_existente.get('precio_actual', float('inf')):
-                    vistos[titulo] = juego
+                    vistos[titulo_norm] = juego
             # Para juegos gratis, mantener el que tenga más reviews
             elif juego.get('reviews_count', 0) > juego_existente.get('reviews_count', 0):
-                vistos[titulo] = juego
+                vistos[titulo_norm] = juego
     
     return list(vistos.values())
 
@@ -201,6 +245,14 @@ def main():
         # Combinar todas las ofertas
         ofertas_itad.extend(ofertas_cheapshark)
         
+        # Eliminar duplicados ANTES de separar 100%
+        print(f"\n🗑️ Eliminando duplicados en ofertas...")
+        ofertas_antes = len(ofertas_itad)
+        ofertas_itad = eliminar_duplicados(ofertas_itad)
+        duplicados_removidos = ofertas_antes - len(ofertas_itad)
+        if duplicados_removidos > 0:
+            print(f"   ✅ Removidos {duplicados_removidos} duplicado(s) en ofertas")
+        
         # Separar ofertas 100% descuento (son GRATIS)
         print(f"\n🎁 Separando ofertas 100% descuento como GRATIS...")
         ofertas_100 = []
@@ -216,13 +268,16 @@ def main():
         
         if ofertas_100:
             print(f"   🎉 {len(ofertas_100)} oferta(s) 100% movidas a canal GRATIS")
-            todos_juegos.extend(ofertas_100)
+            # Eliminar duplicados antes de agregar a todos_juegos
+            todos_juegos_temp = todos_juegos + ofertas_100
+            todos_juegos = eliminar_duplicados(todos_juegos_temp)
+            print(f"   📊 Total juegos después de merge: {len(todos_juegos)}")
         
         # Actualizar lista de ofertas (sin las 100%)
         ofertas_itad = ofertas_con_descuento
         
-        # Eliminar duplicados (mantener el de mejor precio)
-        print(f"\n🗑️ Eliminando duplicados...")
+        # Eliminar duplicados en ofertas finales
+        print(f"\n🗑️ Eliminando duplicados finales...")
         ofertas_antes = len(ofertas_itad)
         ofertas_itad = eliminar_duplicados(ofertas_itad)
         duplicados_removidos = ofertas_antes - len(ofertas_itad)
