@@ -18,11 +18,13 @@ class DiscordNotifier:
         webhook_weekends,
         webhook_deals=None,
         webhook_todos=None,
+        webhook_consolas=None,
         rol_premium=None,
         rol_bajos=None,
         rol_weekends=None,
         rol_deals=None,
-        rol_todos=None
+        rol_todos=None,
+        rol_consolas=None
     ):
         """
         Inicializa el notificador
@@ -33,31 +35,99 @@ class DiscordNotifier:
             webhook_weekends (str): Webhook del canal free weekends
             webhook_deals (str, optional): Webhook del canal deals/descuentos
             webhook_todos (str, optional): Webhook del canal todos los juegos
+            webhook_consolas (str, optional): Webhook del canal de consolas
             rol_premium (str, optional): ID del rol premium
             rol_bajos (str, optional): ID del rol bajos
             rol_weekends (str, optional): ID del rol weekends
             rol_deals (str, optional): ID del rol deals
             rol_todos (str, optional): ID del rol todos
+            rol_consolas (str, optional): ID del rol consolas
         """
         self.webhook_premium = webhook_premium
         self.webhook_bajos = webhook_bajos
         self.webhook_weekends = webhook_weekends
         self.webhook_deals = webhook_deals
         self.webhook_todos = webhook_todos
+        self.webhook_consolas = webhook_consolas
 
         self.rol_premium = rol_premium
         self.rol_bajos = rol_bajos
         self.rol_weekends = rol_weekends
         self.rol_deals = rol_deals
         self.rol_todos = rol_todos
+        self.rol_consolas = rol_consolas
         
         # Colores por tienda
         self.colores_tienda = {
             'Epic Games': 0x00D9FF,
             'Steam': 0x1B2838,
             'GOG': 0x86328A,
-            'Itch.io': 0xFA5C5C
+            'Itch.io': 0xFA5C5C,
+            'PlayStation': 0x003791,
+            'Xbox': 0x107C10,
+            'Nintendo': 0xE60012
         }
+
+    def enviar_oferta_consolas(self, juego):
+        """
+        Envía una oferta de consola al canal dedicado
+        """
+        if not self.webhook_consolas:
+            return False
+            
+        try:
+            content = f"{juego['tienda_emoji']} **¡Oferta de {juego['tienda']} Detectada!**"
+            if self.rol_consolas:
+                content += f" <@&{self.rol_consolas}>"
+                
+            embed = {
+                "title": juego['titulo'],
+                "url": juego['url'],
+                "color": juego.get('color', 0x00D9FF),
+                "fields": [
+                    {
+                        "name": "🏪 Consola",
+                        "value": f"{juego['tienda_emoji']} {juego['tienda']}",
+                        "inline": True
+                    }
+                ],
+                "footer": {
+                    "text": "HunDea Consolas • Ofertas en tiempo real"
+                },
+                "timestamp": datetime.utcnow().isoformat()
+            }
+
+            devices_str = self._get_devices_str(juego)
+            if devices_str:
+                embed['fields'].append({
+                    "name": "Dispositivos",
+                    "value": devices_str,
+                    "inline": True
+                })
+
+            if juego.get('descuento_porcentaje'):
+                embed['fields'].append({
+                    "name": "💰 Descuento",
+                    "value": f"**-{juego['descuento_porcentaje']}%**",
+                    "inline": True
+                })
+            
+            if juego.get('precio_actual'):
+                embed['fields'].append({
+                    "name": "💸 Precio",
+                    "value": f"${juego['precio_actual']:.2f}",
+                    "inline": True
+                })
+
+            if juego.get('imagen_url'):
+                embed['image'] = {"url": juego['imagen_url']}
+                
+            payload = {"content": content, "embeds": [embed]}
+            response = requests.post(self.webhook_consolas, json=payload, timeout=10)
+            return response.status_code == 204
+        except Exception as e:
+            print(f"❌ Error al enviar oferta de consolas: {e}")
+            return False
     
     def enviar_juego_premium(self, juego, score, estrellas):
         """
@@ -213,7 +283,15 @@ class DiscordNotifier:
                 },
                 "timestamp": datetime.utcnow().isoformat()
             }
-            
+
+            devices_str = self._get_devices_str(juego)
+            if devices_str:
+                embed['fields'].append({
+                    "name": "Dispositivos",
+                    "value": devices_str,
+                    "inline": True
+                })
+
             # Reviews si existen
             if juego.get('reviews_percent'):
                 embed['fields'].append({
@@ -337,7 +415,15 @@ class DiscordNotifier:
             },
             "timestamp": datetime.utcnow().isoformat()
         }
-        
+
+        devices_str = self._get_devices_str(juego)
+        if devices_str:
+            embed['fields'].append({
+                "name": "Dispositivos",
+                "value": devices_str,
+                "inline": True
+            })
+
         # Agregar descripción solo si existe
         if juego.get('descripcion'):
             desc = juego['descripcion']
@@ -376,6 +462,31 @@ class DiscordNotifier:
         
         return embed
     
+    def _get_devices_str(self, juego):
+        """Return compatible devices string if available."""
+        if not isinstance(juego, dict):
+            return None
+
+        devices_str = juego.get('devices_str')
+        if devices_str:
+            return devices_str
+
+        devices = juego.get('devices')
+        if isinstance(devices, list) and devices:
+            return ", ".join(devices)
+
+        platforms = juego.get('platforms')
+        if isinstance(platforms, list) and platforms:
+            return ", ".join(platforms)
+        if isinstance(platforms, str) and platforms:
+            return platforms
+
+        platform = juego.get('platform') or juego.get('console_gen')
+        if platform:
+            return platform
+
+        return None
+
     def _crear_contenido_mensaje(self, tipo, tienda=None, rol_id=None):
         """
         Crea el contenido del mensaje según el tipo
