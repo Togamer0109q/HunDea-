@@ -11,7 +11,8 @@ class EpicHunter:
     Busca juegos gratis en Epic Games Store
     """
     
-    def __init__(self):
+    def __init__(self, logger=None):
+        self.logger = logger
         self.api_url = "https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions"
     
     def obtener_juegos_gratis(self):

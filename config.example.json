@@ -1,0 +1,22 @@
+{
+  "webhook_premium": "TU_WEBHOOK_PREMIUM_AQUI",
+  "webhook_bajos": "TU_WEBHOOK_BAJOS_AQUI",
+  "webhook_weekends": "TU_WEBHOOK_WEEKENDS_AQUI",
+  "webhook_deals": "TU_WEBHOOK_DEALS_AQUI",
+  "webhook_consolas": "TU_WEBHOOK_CONSOLAS_AQUI",
+  "rawg_api_key": null,
+  "enviar_discord": true,
+  "rol_premium": "TU_ROL_PREMIUM_ID",
+  "rol_bajos": "TU_ROL_BAJOS_ID",
+  "rol_weekends": "TU_ROL_WEEKENDS_ID",
+  "rol_deals": "TU_ROL_DEALS_ID",
+  "rol_consolas": "TU_ROL_CONSOLAS_ID",
+  "deals_descuento_minimo": 40,
+  "deals_precio_maximo": 20,
+  "deals_score_minimo": 2.5,
+  "itch_settings": {
+    "limite": 20,
+    "min_rating": 3.5,
+    "min_downloads": 50
+  }
+}

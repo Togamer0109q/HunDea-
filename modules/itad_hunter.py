@@ -6,17 +6,29 @@ Detecta ofertas de múltiples tiendas: Steam, GOG, Humble, Epic, Uplay, etc.
 API completamente gratuita, sin necesidad de API key
 """
 
+import logging
+import os
 import requests
 from datetime import datetime
 import time
+try:
+    from dotenv import load_dotenv
+except Exception:  # pragma: no cover - optional dependency
+    def load_dotenv(*_args, **_kwargs):
+        return False
 
 class IsThereAnyDealHunter:
     """
     Busca juegos gratis en múltiples tiendas usando IsThereAnyDeal API v2
     """
     
-    def __init__(self):
+    def __init__(self, api_key=None, logger=None):
+        load_dotenv()
+        self.logger = logger or logging.getLogger(__name__)
         self.base_url = "https://api.isthereanydeal.com"
+        self.api_key = api_key or os.getenv("ITAD_API_KEY")
+        if not self.api_key:
+            self.logger.warning("ITAD_API_KEY not set; API may be limited")
         
         # Mapeo de tiendas por ID
         self.tiendas_map = {
@@ -145,6 +157,9 @@ class IsThereAnyDealHunter:
                 'offset': 0,
                 'limit': 20  # Limitar resultados
             }
+
+            if self.api_key:
+                params['key'] = self.api_key
             
             response = requests.get(url, params=params, timeout=15)
             

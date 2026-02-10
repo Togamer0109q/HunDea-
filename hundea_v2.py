@@ -13,6 +13,8 @@ from modules.epic_hunter import EpicHunter
 from modules.steam_hunter import SteamHunter
 from modules.itad_hunter import IsThereAnyDealHunter
 from modules.cheapshark_hunter import CheapSharkHunter
+from modules.itch_hunter import ItchHunter
+from modules.consolas_hunter import ConsolasHunter
 from modules.scoring import SistemaScoring
 from modules.discord_notifier import DiscordNotifier
 from modules.reviews_externas import ReviewsExternas
@@ -151,6 +153,7 @@ def main():
         steam_hunter = SteamHunter()
         itad_hunter = IsThereAnyDealHunter()
         cheapshark_hunter = CheapSharkHunter()
+        itch_hunter = ItchHunter()
         scoring = SistemaScoring()
         
         # Reviews externas con API key si está configurado
@@ -205,6 +208,30 @@ def main():
                     juego.update(reviews)
         
         todos_juegos.extend(juegos_cheapshark)
+        
+        # Itch.io - Juegos Gratis Indie
+        print("\n🔴 Buscando juegos GRATIS en Itch.io...")
+        config_itch = config.get('itch_settings', {})
+        limite_itch = config_itch.get('limite', 20)
+        min_rating_itch = config_itch.get('min_rating', 3.5)
+        min_downloads_itch = config_itch.get('min_downloads', 50)
+        
+        juegos_itch = itch_hunter.obtener_juegos_gratis(
+            limite=limite_itch,
+            min_rating=min_rating_itch,
+            min_downloads=min_downloads_itch
+        )
+        
+        # Buscar reviews para juegos de Itch.io (opcional, muchos no tienen)
+        for juego in juegos_itch:
+            rating = juego.get('rating') or 0
+            if not juego.get('reviews_count') and rating >= 4.0:
+                print(f"   🔍 Buscando reviews para: {juego['titulo']}")
+                reviews = reviews_externas.buscar_reviews(juego['titulo'], 'Itch.io')
+                if reviews:
+                    juego.update(reviews)
+        
+        todos_juegos.extend(juegos_itch)
         
         # Eliminar duplicados en juegos gratis
         print(f"\n🗑️ Eliminando duplicados en juegos gratis...")
@@ -285,6 +312,12 @@ def main():
             print(f"   ✅ Removidos {duplicados_removidos} duplicado(s)")
             print(f"   📊 Total ofertas únicas: {len(ofertas_itad)}")
         
+        # Consolas (PlayStation, Xbox, Nintendo)
+        print("\n🎮 Buscando ofertas de CONSOLAS (PS, Xbox, Nintendo)...")
+        consolas_hunter = ConsolasHunter()
+        ofertas_consolas = consolas_hunter.obtener_ofertas()
+        print(f"   📊 Encontradas {len(ofertas_consolas)} ofertas de consolas")
+
         # Steam (temporalmente desactivado - requiere mejor implementación)
         # juegos_steam = steam_hunter.obtener_juegos_gratis()
         # todos_juegos.extend(juegos_steam)
@@ -336,7 +369,8 @@ def main():
             # Mostrar en consola
             print(f"{estrellas} {juego['titulo']}")
             print(f"   🏪 {juego['tienda']} | 📊 {score:.1f}/5.0 ({descripcion})")
-            if 'reviews_percent' in juego:
+            # Solo mostrar reviews si existen y no son None
+            if juego.get('reviews_percent') is not None and juego.get('reviews_count') is not None:
                 print(f"   ⭐ {juego['reviews_percent']}% ({juego['reviews_count']:,} reviews)")
             print(f"   🔗 {juego['url']}")
             print(f"   {'─'*60}")
@@ -356,7 +390,8 @@ def main():
                 print(f"💰 {juego['titulo']}")
                 print(f"   🏪 {juego['tienda']} | 📊 {score:.1f}/5.0 ({estrellas})")
                 print(f"   💸 -{juego.get('descuento_porcentaje', 0)}% | ${juego.get('precio_actual', 0):.2f}")
-                if juego.get('reviews_percent'):
+                # Solo mostrar reviews si existen y no son None
+                if juego.get('reviews_percent') is not None and juego.get('reviews_count') is not None:
                     print(f"   ⭐ {juego['reviews_percent']}% ({juego['reviews_count']:,} reviews)")
                 print(f"   🔗 {juego['url']}")
                 print(f"   {'─'*60}")
@@ -378,10 +413,12 @@ def main():
             webhook_bajos = config.get('webhook_bajos')
             webhook_weekends = config.get('webhook_weekends')
             webhook_deals = config.get('webhook_deals')
+            webhook_consolas = config.get('webhook_consolas')
             webhook_todos = config.get('webhook_todos')
             rol_id = config.get('rol_id')
             rol_todos = config.get('rol_todos')
             rol_deals = config.get('rol_deals')
+            rol_consolas = config.get('rol_consolas')
             
             if not all([webhook_premium, webhook_bajos, webhook_weekends]):
                 print("⚠️ Faltan webhooks configurados. Solo mostrando en consola.\n")
@@ -394,11 +431,13 @@ def main():
                     webhook_weekends,
                     webhook_deals=webhook_deals,
                     webhook_todos=webhook_todos,
+                    webhook_consolas=webhook_consolas,
                     rol_premium=config.get('rol_premium'),
                     rol_bajos=config.get('rol_bajos'),
                     rol_weekends=config.get('rol_weekends'),
                     rol_deals=config.get('rol_deals'),
-                    rol_todos=config.get('rol_todos')
+                    rol_todos=config.get('rol_todos'),
+                    rol_consolas=rol_consolas
                 )
                 
                 # Enviar juegos premium
@@ -418,6 +457,17 @@ def main():
                             enviados_bajos += 1
                     else:
                         print(f"⏭️  Saltando {juego['titulo']} (ya anunciado)")
+                
+                # Enviar ofertas de consolas
+                enviados_consolas = 0
+                if webhook_consolas:
+                    for juego in ofertas_consolas:
+                        if juego['id'] not in cache['juegos_anunciados']:
+                            if notifier.enviar_oferta_consolas(juego):
+                                cache['juegos_anunciados'].append(juego['id'])
+                                enviados_consolas += 1
+                        else:
+                            print(f"⏭️  Saltando consola {juego['titulo']} (ya anunciado)")
                 
                 # Enviar free weekends
                 for juego in free_weekends:

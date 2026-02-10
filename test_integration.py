@@ -5,6 +5,7 @@ Prueba rápida de todas las fuentes integradas
 """
 
 import sys
+import os
 sys.path.insert(0, '.')
 
 from modules.epic_hunter import EpicHunter
@@ -13,6 +14,11 @@ from modules.cheapshark_hunter import CheapSharkHunter
 from modules.scoring import SistemaScoring
 from modules.reviews_externas import ReviewsExternas
 import json
+try:
+    from dotenv import load_dotenv
+except Exception:
+    def load_dotenv(*_args, **_kwargs):
+        return False
 
 def test_integracion_completa():
     print("\n" + "="*70)
@@ -26,6 +32,8 @@ def test_integracion_completa():
     except:
         config = {'deals_descuento_minimo': 70, 'deals_precio_maximo': 10}
     
+    load_dotenv()
+
     # Inicializar todos los hunters
     print("🚀 Inicializando hunters...")
     epic_hunter = EpicHunter()
@@ -34,7 +42,7 @@ def test_integracion_completa():
     scoring = SistemaScoring()
     
     # Reviews externas
-    rawg_api_key = config.get('rawg_api_key')
+    rawg_api_key = os.getenv('RAWG_API_KEY') or config.get('rawg_api_key')
     reviews_externas = ReviewsExternas(api_key=rawg_api_key)
     
     print("\n" + "─"*70)
