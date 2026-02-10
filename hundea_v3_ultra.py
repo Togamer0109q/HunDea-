@@ -157,11 +157,10 @@ class HunDeaBotUltra:
             # Calculate score
             score = self.scoring.calcular_score(deal)
             
-            # Add to deal
+            # Only add score to dicts (ConsoleDeal has computed quality_score property)
             if isinstance(deal, dict):
                 deal['quality_score'] = score
-            else:
-                deal.quality_score = score
+            # For ConsoleDeal objects, quality_score is already computed - don't modify
             
             scored.append(deal)
         
