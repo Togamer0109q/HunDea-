@@ -30,9 +30,14 @@ from modules.mega_api_aggregator import MegaAPIAggregator
 # Import AI
 from modules.ai import SmartDealValidator
 
+# Import console hunters
+from modules.consoles import ConsoleDeal
+
 # Import utilities
 from modules.core.cache_manager import CacheManager
 from modules.discord_notifier import DiscordNotifier
+from modules.notifiers.console_notifier import ConsoleNotifier
+from modules.notifiers.pc_notifier import PCNotifier
 from modules.scoring import SistemaScoring
 from modules.core.env_config import apply_env_overrides
 
@@ -69,13 +74,17 @@ class HunDeaBotUltra:
         # Initialize scoring system
         self.scoring = SistemaScoring(logger=logger)
         
-        # Initialize notifier
+        # Initialize notifiers
         try:
             self.notifier = DiscordNotifier(self.config, logger)
-            logger.info("✅ Discord notifier initialized")
+            self.console_notifier = ConsoleNotifier(self.config, logger)
+            self.pc_notifier = PCNotifier(self.config, logger)
+            logger.info("✅ Discord notifiers initialized")
         except Exception as e:
-            logger.warning(f"⚠️  Discord notifier failed: {e}")
+            logger.warning(f"⚠️  Discord notifiers failed: {e}")
             self.notifier = None
+            self.console_notifier = None
+            self.pc_notifier = None
         
         # Features
         features = self.config.get('features', {})
@@ -229,11 +238,116 @@ class HunDeaBotUltra:
             
             # Send by platform
             for platform, platform_deals in by_platform.items():
-                logger.info(f"   {platform}: {len(platform_deals)} deals")
-                # TODO: Send via notifier
+                count = len(platform_deals)
+                logger.info(f"   {platform}: {count} deals")
+                
+                # Console deals
+                if platform in ['playstation', 'xbox', 'nintendo']:
+                    if self.console_notifier:
+                        # Convert to ConsoleDeal objects
+                        console_deals = []
+                        for d in platform_deals:
+                            cd = self._convert_to_console_deal(d, platform)
+                            if cd:
+                                console_deals.append(cd)
+                        
+                        if console_deals:
+                            self.console_notifier.send_deals(console_deals)
+                    else:
+                        logger.warning("⚠️  Console notifier not available")
+                
+                # PC deals
+                else:
+                    if self.pc_notifier:
+                        # Ensure dicts
+                        pc_deals = []
+                        for d in platform_deals:
+                            if isinstance(d, dict):
+                                pc_deals.append(d)
+                            else:
+                                # Convert object to dict if needed, or extract basic info
+                                pc_deals.append(self._deal_to_pc_dict(d))
+                        
+                        self.pc_notifier.send_deals(pc_deals)
+                    else:
+                        logger.warning("⚠️  PC notifier not available")
         
         except Exception as e:
             logger.error(f"❌ Notification error: {e}")
+
+    def _convert_to_console_deal(self, deal, platform: str) -> 'ConsoleDeal':
+        """Convert a deal dictionary/object to ConsoleDeal."""
+        try:
+            if isinstance(deal, ConsoleDeal):
+                return deal
+            
+            # Extract fields from dict or object
+            if isinstance(deal, dict):
+                title = deal.get('title') or deal.get('name', 'Unknown')
+                url = deal.get('url') or deal.get('store_url', '')
+                price = deal.get('current_price') or deal.get('price', 0.0)
+                original = deal.get('original_price') or deal.get('regular_price', price)
+                discount = deal.get('discount_percent') or deal.get('discount', 0)
+                console_gen = deal.get('console_gen') or platform
+                game_id = deal.get('game_id') or deal.get('id')
+                quality_score = deal.get('quality_score', 0)
+            else:
+                title = getattr(deal, 'title', 'Unknown')
+                url = getattr(deal, 'url', getattr(deal, 'store_url', ''))
+                price = getattr(deal, 'current_price', getattr(deal, 'price', 0.0))
+                original = getattr(deal, 'original_price', getattr(deal, 'regular_price', price))
+                discount = getattr(deal, 'discount_percent', getattr(deal, 'discount', 0))
+                console_gen = getattr(deal, 'console_gen', platform)
+                game_id = getattr(deal, 'game_id', getattr(deal, 'id', None))
+                quality_score = getattr(deal, 'quality_score', 0)
+
+            # Fix platform name for ConsoleDeal
+            platform_map = {
+                'playstation': 'PlayStation',
+                'xbox': 'Xbox', 
+                'nintendo': 'Nintendo'
+            }
+            clean_platform = platform_map.get(platform.lower(), 'PlayStation')
+            
+            # Create ConsoleDeal
+            cd = ConsoleDeal(
+                title=title,
+                store_url=url,
+                platform=clean_platform,
+                console_gen=console_gen,
+                original_price=float(original) if original else 0.0,
+                current_price=float(price) if price else 0.0,
+                discount_percent=int(discount) if discount else 0,
+                game_id=game_id or f"{platform}_{title.replace(' ', '_')}"
+            )
+            
+            # Restore score if available (ConsoleDeal computes it, but we might want the aggregated one)
+            if quality_score:
+                # We can't easily override the property, but we can set components
+                # or just rely on re-computation if we have metadata
+                pass
+                
+            return cd
+            
+        except Exception as e:
+            logger.warning(f"⚠️  Failed to convert deal to ConsoleDeal: {e}")
+            return None
+
+    def _deal_to_pc_dict(self, deal) -> Dict:
+        """Convert object to dict for PC notifier."""
+        try:
+            return {
+                'title': getattr(deal, 'title', 'Unknown'),
+                'titulo': getattr(deal, 'title', 'Unknown'),
+                'url': getattr(deal, 'url', ''),
+                'descripcion': getattr(deal, 'description', ''),
+                'tienda': getattr(deal, 'source', 'PC'),
+                'imagen': getattr(deal, 'image_url', None),
+                'fin': getattr(deal, 'expiry', None)
+            }
+        except:
+            return {}
+
     
     def _get_platform(self, deal) -> str:
         """Get platform from deal."""
