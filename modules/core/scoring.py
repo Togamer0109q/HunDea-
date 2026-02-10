@@ -1,13 +1,16 @@
 """
-🎮 Sistema de Puntuación - HunDeaBot
-────────────────────────────────────
+🎮 Sistema de Puntuación - HunDeaBot FIXED
+──────────────────────────────────────────
 
 Calcula el score de cada juego basado en reviews y popularidad.
-Proporciona integración con RAWG para enriquecimiento de datos.
+Maneja BOTH dicts y dataclasses (ConsoleDeal).
+
+FIXED: Ahora soporta ConsoleDeal objects y dicts
 """
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Union, Any
 import logging
+from dataclasses import is_dataclass, asdict
 from ..reviews_externas import ReviewsExternas
 
 logger = logging.getLogger(__name__)
@@ -32,24 +35,61 @@ def get_rawg_data(title: str, api_key: str) -> Optional[Dict]:
     except Exception as e:
         return None
 
+
 class SistemaScoring:
     """
-    Sistema de puntuación para clasificar juegos
+    Sistema de puntuación para clasificar juegos.
     Score: 0.0 - 5.0
+    
+    FIXED: Ahora maneja tanto dicts como dataclasses.
     """
 
     def __init__(self, logger=None):
-        # Optional logger; scoring is mostly static.
         self.logger = logger or logging.getLogger(__name__)
     
     @staticmethod
-    def calcular_score(juego_info: Dict) -> float:
-        """Calcula el score total de un juego con sistema híbrido."""
+    def _safe_get(obj: Any, key: str, default=None):
+        """
+        Safely get value from dict or dataclass.
+        
+        Args:
+            obj: Dict or dataclass instance
+            key: Attribute/key name
+            default: Default value if not found
+            
+        Returns:
+            Value or default
+        """
+        if isinstance(obj, dict):
+            return obj.get(key, default)
+        elif is_dataclass(obj):
+            return getattr(obj, key, default)
+        else:
+            return default
+    
+    def calcular_score(self, juego_info: Union[Dict, Any]) -> float:
+        """
+        Calcula el score total de un juego con sistema híbrido.
+        
+        FIXED: Ahora soporta tanto dicts como ConsoleDeal objects.
+        
+        Args:
+            juego_info: Dict o ConsoleDeal object
+            
+        Returns:
+            Score 0.0 - 5.0
+        """
+        
+        # Get values safely (works with both dict and dataclass)
+        fuente = self._safe_get(juego_info, 'fuente')
+        reviews_percent = self._safe_get(juego_info, 'reviews_percent', 0)
+        reviews_count = self._safe_get(juego_info, 'reviews_count', 0)
+        metacritic = self._safe_get(juego_info, 'metacritic')
         
         # Sistema híbrido para RAWG
-        if juego_info.get('fuente') == 'RAWG' and 'reviews_percent' in juego_info:
-            reviews_count = juego_info.get('reviews_count', 0) or 0
-            percent = juego_info.get('reviews_percent', 0) or 0
+        if fuente == 'RAWG' and reviews_percent:
+            reviews_count = reviews_count or 0
+            percent = reviews_percent or 0
             
             # CASO 1: Muchas reviews (1000+) - Muy confiable
             if reviews_count >= 1000:
@@ -60,11 +100,10 @@ class SistemaScoring:
                 elif reviews_count >= 5000:
                     base_score += 0.2
                 
-                if juego_info.get('metacritic'):
-                    meta = juego_info['metacritic']
-                    if meta >= 85:
+                if metacritic:
+                    if metacritic >= 85:
                         base_score += 0.2
-                    elif meta >= 75:
+                    elif metacritic >= 75:
                         base_score += 0.1
                 
                 return min(base_score, 5.0)
@@ -86,27 +125,37 @@ class SistemaScoring:
             
             return 3.0 if percent >= 75 else 2.0
         
-        # Fallback para otras fuentes
+        # Fallback para otras fuentes o ConsoleDeal sin reviews
         score = 0.0
-        reviews_percent = juego_info.get('reviews_percent')
+        
         try:
             percent_val = float(reviews_percent) if reviews_percent is not None else 0.0
         except (TypeError, ValueError):
             percent_val = 0.0
+        
         score += (percent_val / 100.0) * 3.5
 
-        count = juego_info.get('reviews_count') or 0
-        if isinstance(count, (int, float)):
-            count = int(count)
-        if count > 10000: score += 1.5
-        elif count > 1000: score += 1.0
-        elif count > 100: score += 0.5
+        try:
+            count = int(reviews_count) if reviews_count else 0
+        except (TypeError, ValueError):
+            count = 0
+            
+        if count > 10000:
+            score += 1.5
+        elif count > 1000:
+            score += 1.0
+        elif count > 100:
+            score += 0.5
             
         return min(score, 5.0)
 
     @staticmethod
     def obtener_estrellas(score: float) -> str:
-        if score >= 4.5: return "⭐⭐⭐"
-        elif score >= 3.5: return "⭐⭐"
-        elif score >= 2.0: return "⭐"
+        """Get star rating from score."""
+        if score >= 4.5:
+            return "⭐⭐⭐"
+        elif score >= 3.5:
+            return "⭐⭐"
+        elif score >= 2.0:
+            return "⭐"
         return "⚠️"
