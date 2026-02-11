@@ -3831,5 +3831,34 @@
     "devices_str": "PC",
     "quality_score": 0.0,
     "posted_at": "2026-02-11T05:56:26.702000"
+  },
+  "gamerpower_love too easily stove giveaway": {
+    "id": "gp_3491",
+    "title": "Love Too Easily (STOVE) Giveaway",
+    "description": "Download Love Too Easily for free via STOVE! Love Too Easily is a choose-your-own-adventure game that plays more like an interactive movie, where you can solve mysteries and play mini-games.",
+    "url": "https://www.gamerpower.com/open/love-too-easily-pc-giveaway",
+    "image": "https://www.gamerpower.com/offers/1b/698ca0fb8cc30.jpg",
+    "thumbnail": "https://www.gamerpower.com/offers/1/698ca0fb8cc30.jpg",
+    "type": "game",
+    "is_free_weekend": false,
+    "worth": "$21.99",
+    "platforms": [
+      "PC"
+    ],
+    "end_date": "2026-02-18 23:59:00",
+    "published_date": "2026-02-11 10:32:11",
+    "instructions": "1. Click the button to visit the giveaway page.\r\n2. Log in to your STOVE Store account.\r\n3. Click the button \"Cart\" to add the game to your library",
+    "source": "gamerpower",
+    "source_trust": 0.7,
+    "ai_verified": true,
+    "ai_trust_score": 0.65,
+    "ai_verdict": "⚠️  PROBABLE REAL - Verificar",
+    "ai_flag": "CONFIABLE",
+    "devices": [
+      "PC"
+    ],
+    "devices_str": "PC",
+    "quality_score": 0.0,
+    "posted_at": "2026-02-11T18:00:45.882457"
   }
 }
