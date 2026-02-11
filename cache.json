@@ -3860,5 +3860,35 @@
     "devices_str": "PC",
     "quality_score": 0.0,
     "posted_at": "2026-02-11T18:00:45.882457"
+  },
+  "gamerpower_lost in anomaly steam giveaway": {
+    "id": "gp_3492",
+    "title": "Lost in Anomaly (Steam) Giveaway",
+    "description": "Lost in Anomaly is free on Steam until February 16! Lost in Anomaly is a 3d first-person immersive sim about finding different anomalies on each floor.",
+    "url": "https://www.gamerpower.com/open/lost-in-anomaly-steam-giveaway",
+    "image": "https://www.gamerpower.com/offers/1b/698cc7c245ae3.jpg",
+    "thumbnail": "https://www.gamerpower.com/offers/1/698cc7c245ae3.jpg",
+    "type": "game",
+    "is_free_weekend": false,
+    "worth": "$3.99",
+    "platforms": [
+      "PC",
+      "Steam"
+    ],
+    "end_date": "2026-02-16 23:59:00",
+    "published_date": "2026-02-11 13:17:38",
+    "instructions": "1. Click the button to visit the giveaway page.\r\n2. Download this game directly via Steam before the offer expires.\r\n3. That´s it! Have fun!",
+    "source": "gamerpower",
+    "source_trust": 0.7,
+    "ai_verified": true,
+    "ai_trust_score": 0.65,
+    "ai_verdict": "⚠️  PROBABLE REAL - Verificar",
+    "ai_flag": "CONFIABLE",
+    "devices": [
+      "PC"
+    ],
+    "devices_str": "PC",
+    "quality_score": 0.0,
+    "posted_at": "2026-02-11T20:45:41.854303"
   }
 }
