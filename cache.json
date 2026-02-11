@@ -3890,5 +3890,29 @@
     "devices_str": "PC",
     "quality_score": 0.0,
     "posted_at": "2026-02-11T20:45:41.854303"
+  },
+  "steam_bridge constructor": {
+    "title": "Bridge Constructor",
+    "price": 0.79,
+    "regular_price": 9.99,
+    "discount_percent": 92,
+    "url": "https://www.cheapshark.com/redirect?dealID=UrBX%2B2gxfz6TRCGduJIjVDJy0yykyDjjbwM3OWQoZPY%3D",
+    "image_url": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/250460/capsule_231x87.jpg?t=1755107266",
+    "platform": "Steam",
+    "metacritic": "0",
+    "steam_rating": "77",
+    "source": "steam",
+    "steam_app_id": "250460",
+    "source_trust": 1.0,
+    "ai_verified": true,
+    "ai_trust_score": 0.6100000000000001,
+    "ai_verdict": "⚠️  PROBABLE REAL - Verificar",
+    "ai_flag": "CONFIABLE",
+    "devices": [
+      "PC"
+    ],
+    "devices_str": "PC",
+    "quality_score": 0.0,
+    "posted_at": "2026-02-11T23:38:27.556165"
   }
 }
