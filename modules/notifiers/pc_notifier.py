@@ -189,22 +189,24 @@ class PCNotifier:
                 
                 embed = self.create_v2_embed(deal, score, tipo)
                 
-                # Content Message (exactly like v2)
+                # Content Message (RESTORING V1 SOUL)
+                titulo_juego = self._get_game_title(deal)
+                tienda = deal.get('tienda') or deal.get('store') or deal.get('source') or 'tienda'
+                
                 if tipo == "todos":
-                    tienda = deal.get('tienda') or deal.get('store') or deal.get('source') or 'tienda'
-                    content = f"🎮 **¡Nuevo juego GRATIS en {tienda}!**"
+                    content = f"🎮 **¡Nuevo juego GRATIS en {tienda}!** 🎁 {titulo_juego} es GRATIS"
                 elif tipo == "premium":
-                    content = "🎮 **¡JUEGO GRATIS de CALIDAD!**"
+                    content = f"🎮 **¡JUEGO GRATIS de CALIDAD en {tienda}!** 🎁 {titulo_juego} es GRATIS"
                 elif tipo == "weekend":
-                    content = "⏰ **¡GRATIS ESTE FIN DE SEMANA!**"
+                    content = f"⏰ **¡GRATIS ESTE FIN DE SEMANA en {tienda}!** 🎁 {titulo_juego}"
                 elif tipo == "deals":
                     descuento = deal.get('descuento_porcentaje', 0)
-                    content = f"💰 **¡GRAN DESCUENTO (-{descuento}%)!**"
+                    content = f"💰 **¡GRAN DESCUENTO en {tienda} (-{descuento}%)!** 💸 {titulo_juego}"
                 else: # bajos
-                    content = "⚠️ **Juego gratis (calidad no verificada)**"
+                    content = f"⚠️ **Juego gratis (calidad no verificada) en {tienda}** ⚠️ {titulo_juego}"
                 
                 if role_id:
-                    content += f" <@&{role_id}>"
+                    content = f"{content} <@&{role_id}>"
 
                 payload = {"content": content, "embeds": [embed]}
                 resp = requests.post(webhook, json=payload, timeout=10)
