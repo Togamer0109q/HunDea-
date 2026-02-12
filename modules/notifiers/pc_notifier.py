@@ -6,6 +6,7 @@ Routes deals to specific channels with exact v2 formatting.
 
 import requests
 import logging
+import time
 from typing import List, Dict, Optional
 from datetime import datetime
 
@@ -27,7 +28,8 @@ class PCNotifier:
         self.role_weekends = roles.get('pc_weekends')
         self.role_bajos = roles.get('pc_bajos')
 
-        self.premium_threshold = config.get('features', {}).get('premium_threshold', 3.5)
+        # Threshold requested by user: < 3.4 is low quality
+        self.premium_threshold = config.get('features', {}).get('premium_threshold', 3.4)
         
         self.colores_tienda = {
             'Epic Games': 0x00D9FF,
@@ -38,21 +40,23 @@ class PCNotifier:
         }
 
     def _get_game_title(self, deal: Dict) -> str:
-        """Robust title extraction."""
-        return (deal.get('titulo') or 
-                deal.get('title') or 
-                deal.get('name') or 
-                'Unknown Game')
+        """Robust title extraction from any possible field."""
+        title = (deal.get('titulo') or 
+                 deal.get('title') or 
+                 deal.get('name') or 
+                 'Unknown Game')
+        return str(title).strip()
 
     def create_v2_embed(self, deal: Dict, score: float, tipo: str) -> Dict:
         """Creates an embed exactly like HunDea v2."""
-        tienda = deal.get('tienda') or deal.get('store') or deal.get('source') or 'PC'
+        tienda = deal.get('tienda') or deal.get('store') or deal.get('source') or 'PC Store'
         color = self.colores_tienda.get(tienda, 0x00D9FF)
         titulo_juego = self._get_game_title(deal)
         url = deal.get('url') or deal.get('store_url', '')
         
-        # Emoji and stars logic
-        estrellas = "⭐" * int(score) if score > 0 else "⚠️"
+        # Stars logic
+        num_stars = int(score) if score > 0 else 0
+        estrellas = "⭐" * num_stars if num_stars > 0 else "⚠️"
         
         if tipo == "todos":
             titulo_embed = f"{titulo_juego} es GRATIS"
@@ -77,7 +81,7 @@ class PCNotifier:
                 }
             ],
             "footer": {
-                "text": "HunDea v3.1 • Multi-Store Hunter (Legacy Style)"
+                "text": "HunDea v2.7 • Multi-Store Free Games Hunter"
             },
             "timestamp": datetime.utcnow().isoformat()
         }
@@ -90,7 +94,7 @@ class PCNotifier:
             descuento = deal.get('descuento_porcentaje', 0)
             embed["fields"].append({
                 "name": "💰 Precio",
-                "value": f"~~${precio_regular:.2f}~~ → **${precio_actual:.2f}**",
+                "value": f"${precio_regular:.2f} → **${precio_actual:.2f}**",
                 "inline": True
             })
             embed["fields"].append({
@@ -109,7 +113,7 @@ class PCNotifier:
         if tipo != "todos":
             embed['fields'].append({
                 "name": "📊 Score HunDea",
-                "value": f"{score:.1f}/5.0 {estrellas if tipo == 'premium' else ''}",
+                "value": f"{score:.1f}/5.0",
                 "inline": True
             })
 
@@ -131,19 +135,22 @@ class PCNotifier:
         return embed
 
     def send_deal(self, deal: Dict) -> bool:
-        """Sends deal to multiple channels based on v2 logic."""
+        """Sends deal to multiple channels based on v2 logic. Returns True if title is valid."""
         title = self._get_game_title(deal)
-        if title == 'Unknown Game':
+        
+        # CRITICAL: DO NOT SEND IF TITLE IS UNKNOWN OR EMPTY
+        if not title or title.lower() in ['unknown game', 'none', 'unknown', 'null']:
+            self.logger.warning(f"🚫 BLOCKED: Deal without valid title from {deal.get('source', 'unknown')}")
             return False
 
         score = deal.get('quality_score') or deal.get('score', 0)
         precio = deal.get('precio_actual', 0)
-        is_free = precio == 0 or deal.get('is_free', False)
+        is_free = (precio == 0) or deal.get('is_free', False)
         
         destinations = [] # List of (webhook, type, role)
         
-        # 1. Logic for "ALL" channel
-        if self.webhook_todos:
+        # 1. Logic for "ALL" channel (Always send if free)
+        if self.webhook_todos and is_free:
             destinations.append((self.webhook_todos, "todos", None))
             
         # 2. Logic for specific channels
@@ -151,16 +158,16 @@ class PCNotifier:
             # Paid deal
             if self.webhook_deals:
                 destinations.append((self.webhook_deals, "deals", self.role_deals))
-        elif 'weekend' in deal.get('type', '').lower():
+        elif 'weekend' in str(deal.get('type', '')).lower():
             # Free weekend
             if self.webhook_weekends:
                 destinations.append((self.webhook_weekends, "weekend", self.role_weekends))
         elif score >= self.premium_threshold:
-            # Quality Free Game
+            # Quality Free Game (Premium)
             if self.webhook_premium:
                 destinations.append((self.webhook_premium, "premium", self.role_premium))
         else:
-            # Low quality/unverified
+            # Low quality/unverified (Gamelowers)
             webhook = self.webhook_bajos or self.webhook_deals
             role = self.role_bajos or self.role_deals
             if webhook:
@@ -169,14 +176,18 @@ class PCNotifier:
         # Send to all determined destinations
         success = False
         for webhook, tipo, role_id in destinations:
-            if not webhook or "YOUR_" in webhook: continue
+            if not webhook or "YOUR_" in webhook or not webhook.startswith('http'):
+                continue
             
             try:
+                # ANTI RATE LIMIT: Sleep a bit before each request
+                time.sleep(1.5)
+                
                 embed = self.create_v2_embed(deal, score, tipo)
                 
                 # Content Message (exactly like v2)
                 if tipo == "todos":
-                    tienda = deal.get('tienda', 'tienda')
+                    tienda = deal.get('tienda') or deal.get('store') or deal.get('source') or 'tienda'
                     content = f"🎮 **¡Nuevo juego GRATIS en {tienda}!**"
                 elif tipo == "premium":
                     content = "🎮 **¡JUEGO GRATIS de CALIDAD!**"
@@ -193,12 +204,20 @@ class PCNotifier:
 
                 payload = {"content": content, "embeds": [embed]}
                 resp = requests.post(webhook, json=payload, timeout=10)
-                if resp.status_code == 204: success = True
+                
+                if resp.status_code == 204:
+                    success = True
+                elif resp.status_code == 429:
+                    self.logger.error("🛑 DISCORD RATE LIMIT! Sleeping 5 seconds...")
+                    time.sleep(5)
+                    # Retry once
+                    requests.post(webhook, json=payload, timeout=10)
             except Exception as e:
                 self.logger.error(f"Error sending to {tipo}: {e}")
                 
         return success
 
     def send_deals(self, deals: List[Dict]):
+        """Handles sending multiple deals with safety."""
         for deal in deals:
             self.send_deal(deal)
