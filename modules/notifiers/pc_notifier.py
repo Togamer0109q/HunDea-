@@ -137,13 +137,17 @@ class PCNotifier:
     def send_deal(self, deal: Dict) -> bool:
         """Sends deal to multiple channels based on v2 logic. Returns True if title is valid."""
         title = self._get_game_title(deal)
+        score = deal.get('quality_score') or deal.get('score', 0)
         
-        # CRITICAL: DO NOT SEND IF TITLE IS UNKNOWN OR EMPTY
+        # CRITICAL: DO NOT SEND IF TITLE IS UNKNOWN OR SCORE IS 0.0
         if not title or title.lower() in ['unknown game', 'none', 'unknown', 'null']:
             self.logger.warning(f"🚫 BLOCKED: Deal without valid title from {deal.get('source', 'unknown')}")
             return False
+            
+        if float(score) <= 0.1:
+            self.logger.warning(f"🚫 BLOCKED: Low quality spam (Score 0.0) for {title}")
+            return False
 
-        score = deal.get('quality_score') or deal.get('score', 0)
         precio = deal.get('precio_actual', 0)
         is_free = (precio == 0) or deal.get('is_free', False)
         

@@ -319,9 +319,21 @@ class MegaAPIAggregator:
             
             # CRITICAL: Filter out garbage/unknown deals immediately at source
             valid_deals = []
+            junk_keywords = ['dlc', 'pack', 'skin', 'app', 'key', 'giveaway', 'demo', 'bundle', 'addon', 'content']
+            
             for deal in deals:
                 title = self._get_title(deal)
-                if title and title.lower() not in ['unknown', 'none', 'null', 'unknown game', ''] and len(title) > 2:
+                title_lower = title.lower() if title else ""
+                
+                # Check if title is valid and not junk
+                is_valid = (
+                    title and 
+                    title_lower not in ['unknown', 'none', 'null', 'unknown game', ''] and 
+                    len(title) > 2 and
+                    not any(junk in title_lower for junk in junk_keywords)
+                )
+                
+                if is_valid:
                     if isinstance(deal, dict):
                         deal['source'] = source
                         deal['source_trust'] = self.SOURCE_TRUST.get(source, 0.5)
@@ -330,9 +342,9 @@ class MegaAPIAggregator:
                         deal.source_trust = self.SOURCE_TRUST.get(source, 0.5)
                     valid_deals.append(deal)
                 else:
-                    self.logger.debug(f"🗑️  Discarded invalid deal from {source}: {title}")
+                    self.logger.debug(f"🗑️  Discarded junk/invalid deal from {source}: {title}")
             
-            self.logger.info(f"✅ {source}: {len(valid_deals)} valid deals found")
+            self.logger.info(f"✅ {source}: {len(valid_deals)} valid games found (filtered junk)")
             return valid_deals
             return deals
             
