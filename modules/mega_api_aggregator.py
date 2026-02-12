@@ -317,16 +317,23 @@ class MegaAPIAggregator:
             if not isinstance(deals, list):
                 deals = [deals] if deals else []
             
-            # Add source metadata
+            # CRITICAL: Filter out garbage/unknown deals immediately at source
+            valid_deals = []
             for deal in deals:
-                if isinstance(deal, dict):
-                    deal['source'] = source
-                    deal['source_trust'] = self.SOURCE_TRUST.get(source, 0.5)
-                elif hasattr(deal, '__dict__'):
-                    deal.source = source
-                    deal.source_trust = self.SOURCE_TRUST.get(source, 0.5)
+                title = self._get_title(deal)
+                if title and title.lower() not in ['unknown', 'none', 'null', 'unknown game', ''] and len(title) > 2:
+                    if isinstance(deal, dict):
+                        deal['source'] = source
+                        deal['source_trust'] = self.SOURCE_TRUST.get(source, 0.5)
+                    elif hasattr(deal, '__dict__'):
+                        deal.source = source
+                        deal.source_trust = self.SOURCE_TRUST.get(source, 0.5)
+                    valid_deals.append(deal)
+                else:
+                    self.logger.debug(f"🗑️  Discarded invalid deal from {source}: {title}")
             
-            self.logger.info(f"✅ {source}: {len(deals)} deals found")
+            self.logger.info(f"✅ {source}: {len(valid_deals)} valid deals found")
+            return valid_deals
             return deals
             
         except Exception as e:
