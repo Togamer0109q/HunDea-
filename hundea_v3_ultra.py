@@ -282,19 +282,13 @@ class HunDeaBotUltra:
                 else:
                     logger.info(f"   → PC platform: {platform}")
                     if self.pc_notifier:
-                        logger.info(f"   → Converting {len(platform_deals)} deals to dict...")
-                        # Ensure dicts
-                        pc_deals = []
-                        for d in platform_deals:
-                            if isinstance(d, dict):
-                                pc_deals.append(d)
-                            else:
-                                # Convert object to dict if needed, or extract basic info
-                                pc_deals.append(self._deal_to_pc_dict(d))
-                        
-                        logger.info(f"   → Sending {len(pc_deals)} PC deals to Discord...")
-                        result = self.pc_notifier.send_deals(pc_deals)
-                        logger.info(f"   → Result: {result}")
+                        # Iterate and send one by one to allow for channel routing
+                        sent_count = 0
+                        for deal in platform_deals:
+                            # The new notifier handles routing based on score
+                            if self.pc_notifier.send_deal(deal):
+                                sent_count += 1
+                        logger.info(f"   → Sent {sent_count}/{len(platform_deals)} PC deals to Discord.")
                     else:
                         logger.warning("⚠️  PC notifier not available")
         
@@ -358,21 +352,6 @@ class HunDeaBotUltra:
         except Exception as e:
             logger.warning(f"⚠️  Failed to convert deal to ConsoleDeal: {e}")
             return None
-
-    def _deal_to_pc_dict(self, deal) -> Dict:
-        """Convert object to dict for PC notifier."""
-        try:
-            return {
-                'title': getattr(deal, 'title', 'Unknown'),
-                'titulo': getattr(deal, 'title', 'Unknown'),
-                'url': getattr(deal, 'url', ''),
-                'descripcion': getattr(deal, 'description', ''),
-                'tienda': getattr(deal, 'source', 'PC'),
-                'imagen': getattr(deal, 'image_url', None),
-                'fin': getattr(deal, 'expiry', None)
-            }
-        except:
-            return {}
 
     
     def _get_platform(self, deal) -> str:
