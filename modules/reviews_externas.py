@@ -3,14 +3,7 @@ Sistema de búsqueda de reviews externas
 Usa RAWG API (gratuita) para obtener ratings y reviews
 """
 
-import logging
-import os
 import requests
-try:
-    from dotenv import load_dotenv
-except Exception:  # pragma: no cover - optional dependency
-    def load_dotenv(*_args, **_kwargs):
-        return False
 import time
 
 class ReviewsExternas:
@@ -18,14 +11,11 @@ class ReviewsExternas:
     Busca reviews de juegos en bases de datos externas
     """
     
-    def __init__(self, api_key=None, logger=None):
+    def __init__(self, api_key=None):
         # RAWG API key (opcional pero recomendado)
-        if not api_key:
-            load_dotenv()
-        self.api_key = api_key or os.getenv("RAWG_API_KEY")
+        self.api_key = api_key
         self.rawg_url = "https://api.rawg.io/api/games"
         self.cache_busquedas = {}
-        self.logger = logger or logging.getLogger(__name__)
     
     def buscar_reviews(self, titulo, tienda=None):
         """
@@ -111,7 +101,7 @@ class ReviewsExternas:
                 'fuente': 'RAWG'
             }
             
-            self.logger.info("Reviews RAWG: %.1f%% (%s ratings)", percent, f"{ratings_count:,}")
+            print(f"   ℹ️ Reviews encontradas en RAWG: {percent:.1f}% ({ratings_count:,} ratings)")
             
             # Pequeño delay para no saturar la API
             time.sleep(0.5)
@@ -119,7 +109,7 @@ class ReviewsExternas:
             return reviews_data
             
         except Exception as e:
-            self.logger.warning("RAWG lookup error: %s", e)
+            print(f"   ⚠️ Error al buscar en RAWG: {e}")
             return None
     
     def _nombres_similares(self, nombre1, nombre2):

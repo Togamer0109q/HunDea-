@@ -4,7 +4,6 @@ Detector de ofertas usando CheapShark API
 Encuentra juegos gratis y ofertas increíbles
 """
 
-import logging
 import requests
 import time
 
@@ -13,8 +12,7 @@ class CheapSharkHunter:
     Busca juegos gratis y ofertas en múltiples tiendas usando CheapShark
     """
     
-    def __init__(self, logger=None):
-        self.logger = logger or logging.getLogger(__name__)
+    def __init__(self):
         self.base_url = "https://www.cheapshark.com/api/1.0"
         
         # Mapeo de tiendas (CheapShark IDs)
@@ -191,8 +189,7 @@ class CheapSharkHunter:
                 'imagen_url': imagen_url,
                 'tipo': tipo,
                 'fuente': 'CheapShark',
-                'metacritic': int(deal.get('metacriticScore', 0)) if deal.get('metacriticScore') else None,
-                'steam_app_id': deal.get('steamAppID')
+                'metacritic': int(deal.get('metacriticScore', 0)) if deal.get('metacriticScore') else None
             }
             
             # Agregar reviews de Steam si existen

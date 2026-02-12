@@ -1,4 +1,4 @@
-# Python
+# Archivos de Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -7,85 +7,23 @@ __pycache__/
 env/
 venv/
 ENV/
-build/
-dist/
 *.egg-info/
-.pytest_cache/
-
-# ═══════════════════════════════════════════
-# 🔒 ARCHIVOS SENSIBLES - NUNCA SUBIR
-# ═══════════════════════════════════════════
-
-# Configuración con API keys y webhooks
-config.json
-config_v3.json
-
-# Variables de entorno
-*.env
-.env
-.env.local
-.env.*.local
-
-# Backups de configuración
-*.bak
-config.*.backup
-
-# API keys y secrets
-secrets.json
-api_keys.txt
-*.key
-*.pem
-
-# ═══════════════════════════════════════════
-# 📝 LOGS Y DATOS
-# ═══════════════════════════════════════════
-
-# Logs
-*.log
-logs/
-huntdea_v3.log
-huntdea_v3.log.*
-
-# Cache y datos temporales
-cache.json
-*.cache
-*.tmp
-temp/
-
-# Datos de usuario
-user_data/
-data/
-
-# ═══════════════════════════════════════════
-# 🛠️ DESARROLLO
-# ═══════════════════════════════════════════
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
+
+# Sistema
 .DS_Store
-
-# OS
 Thumbs.db
-desktop.ini
 
-# Testing
-test_output/
-.coverage
-htmlcov/
+# Configuración sensible (NO subir a GitHub)
+config.json
 
-# ═══════════════════════════════════════════
-# 📦 OTROS
-# ═══════════════════════════════════════════
+# Logs
+*.log
 
-# Node (si usas algún tool de Node)
-node_modules/
-package-lock.json
-
-# Archivos personales
-notas.txt
-TODO.md
-.personal/
+# Módulos de Python
+modules/__pycache__/

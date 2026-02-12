@@ -1,129 +1,131 @@
 """
-📊 Status Notifier - HunDeaBot
-─────────────────────────────
-
-Generates and sends a "Dashboard" status message to Discord
-with cache statistics and GitHub Actions run information.
+Sistema de notificaciones de status para GitHub Actions
+Envía alertas sobre el estado del workflow
 """
 
-import os
-import json
-import logging
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, Any
 import requests
+from datetime import datetime
 
 class StatusNotifier:
-    """Sends bot status and statistics to Discord."""
+    """
+    Envía notificaciones de status del workflow a Discord
+    """
     
-    def __init__(self, config: Dict[str, Any], logger=None):
-        self.config = config
-        self.logger = logger or logging.getLogger(__name__)
-        self.webhook_url = config.get('notifiers', {}).get('discord', {}).get('webhook_url')
-        self.cache_file = Path('cache.json')
+    def __init__(self, webhook_url):
+        """
+        Inicializa el notificador de status
         
-    def _get_cache_stats(self) -> Dict[str, Any]:
-        """Calculates statistics from the cache file."""
-        if not self.cache_file.exists():
-            return {"total": 0, "platforms": {}}
-            
-        try:
-            with open(self.cache_file, 'r', encoding='utf-8') as f:
-                cache = json.load(f)
-                
-            total = len(cache)
-            platforms = {}
-            
-            for item in cache.values():
-                if isinstance(item, dict):
-                    p = item.get('platform', 'Unknown')
-                    platforms[p] = platforms.get(p, 0) + 1
-                    
-            return {
-                "total": total,
-                "platforms": platforms,
-                "size_kb": round(self.cache_file.stat().st_size / 1024, 2)
-            }
-        except Exception as e:
-            self.logger.error(f"❌ Error reading cache for stats: {e}")
-            return {"total": 0, "platforms": {}}
-
-    def send_dashboard(self, deals_found: int, deals_posted: int):
-        """Sends a dashboard-style embed to Discord."""
-        if not self.webhook_url or "YOUR_" in self.webhook_url:
-            self.logger.warning("⚠️ Dashboard NOT sent: Webhook URL is missing or using placeholder in config.json")
-            return
-
-        stats = self._get_cache_stats()
+        Args:
+            webhook_url (str): Webhook de Discord para status
+        """
+        self.webhook_url = webhook_url
+    
+    def notificar_inicio(self):
+        """
+        Notifica que el workflow ha iniciado
         
-        # GitHub Actions context
-        run_id = os.getenv('GITHUB_RUN_ID')
-        repository = os.getenv('GITHUB_REPOSITORY')
-        workflow = os.getenv('GITHUB_WORKFLOW', 'Manual Run')
-        
-        github_url = f"https://github.com/{repository}/actions/runs/{run_id}" if run_id else None
-        
-        # Build platforms string
-        platforms_str = "\n".join([f"• **{p}**: {count} juegos" for p, count in stats['platforms'].items()])
-        
+        Returns:
+            bool: True si se envió correctamente
+        """
         embed = {
-            "title": "📊 HunDeaBot v3.0 - Dashboard de Estado",
-            "color": 0x3498db,  # Blue
-            "description": f"Resumen de la ejecución actual y estado del sistema.",
+            "title": "🚀 HunDea v2 - Workflow Iniciado",
+            "description": "Buscando juegos gratis en todas las tiendas...",
+            "color": 0x3498db,  # Azul
+            "timestamp": datetime.utcnow().isoformat(),
+            "footer": {
+                "text": "HunDea v2 Status"
+            }
+        }
+        
+        return self._enviar(embed)
+    
+    def notificar_exito(self, juegos_premium, juegos_bajos, juegos_total):
+        """
+        Notifica que el workflow terminó exitosamente
+        
+        Args:
+            juegos_premium (int): Juegos enviados a premium
+            juegos_bajos (int): Juegos enviados a bajos
+            juegos_total (int): Total de juegos encontrados
+        
+        Returns:
+            bool: True si se envió correctamente
+        """
+        embed = {
+            "title": "✅ HunDea v2 - Completado Exitosamente",
+            "description": f"Búsqueda de juegos gratis finalizada",
+            "color": 0x2ecc71,  # Verde
             "fields": [
                 {
-                    "name": "🚀 Ejecución Actual",
-                    "value": (
-                        f"• **Deals encontrados**: {deals_found}\n"
-                        f"• **Deals publicados**: {deals_posted}\n"
-                        f"• **Workflow**: {workflow}"
-                    ),
+                    "name": "📊 Juegos encontrados",
+                    "value": f"{juegos_total} juego(s)",
                     "inline": True
                 },
                 {
-                    "name": "💾 Estado de la Caché",
-                    "value": (
-                        f"• **Total en caché**: {stats['total']}\n"
-                        f"• **Tamaño**: {stats['size_kb']} KB\n"
-                        f"{platforms_str}"
-                    ),
+                    "name": "⭐ Premium",
+                    "value": f"{juegos_premium} enviado(s)",
+                    "inline": True
+                },
+                {
+                    "name": "⚠️ Bajos",
+                    "value": f"{juegos_bajos} enviado(s)",
                     "inline": True
                 }
             ],
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
+            "footer": {
+                "text": "HunDea v2 Status"
+            }
         }
         
-        if github_url:
-            embed["fields"].append({
-                "name": "🔗 GitHub Actions",
-                "value": f"[Ver ejecución en GitHub]({github_url})",
-                "inline": False
-            })
-            
-        payload = {
-            "username": "HunDeaBot Status",
-            "avatar_url": "https://i.imgur.com/vHqB0yv.png",
-            "embeds": [embed]
+        return self._enviar(embed)
+    
+    def notificar_error(self, mensaje_error):
+        """
+        Notifica que el workflow falló
+        
+        Args:
+            mensaje_error (str): Descripción del error
+        
+        Returns:
+            bool: True si se envió correctamente
+        """
+        embed = {
+            "title": "❌ HunDea v2 - Error en Workflow",
+            "description": f"El workflow encontró un error",
+            "color": 0xe74c3c,  # Rojo
+            "fields": [
+                {
+                    "name": "🐛 Error",
+                    "value": mensaje_error[:1000],  # Limitar a 1000 chars
+                    "inline": False
+                }
+            ],
+            "timestamp": datetime.utcnow().isoformat(),
+            "footer": {
+                "text": "HunDea v2 Status"
+            }
         }
+        
+        return self._enviar(embed)
+    
+    def _enviar(self, embed):
+        """
+        Envía el embed a Discord
+        
+        Args:
+            embed (dict): Embed a enviar
+        
+        Returns:
+            bool: True si se envió correctamente
+        """
+        if not self.webhook_url or self.webhook_url == "TU_WEBHOOK_AQUI":
+            return False
         
         try:
+            payload = {"embeds": [embed]}
             response = requests.post(self.webhook_url, json=payload, timeout=10)
-            response.raise_for_status()
-            self.logger.info("✅ Dashboard status sent to Discord")
+            return response.status_code == 204
         except Exception as e:
-            self.logger.error(f"❌ Failed to send dashboard: {e}")
-
-    def send_error_report(self, error_msg: str):
-        """Sends a simplified error report if something fails."""
-        if not self.webhook_url: return
-        
-        payload = {
-            "embeds": [{
-                "title": "❌ HunDeaBot - Error en la ejecución",
-                "color": 0xe74c3c, # Red
-                "description": f"Se ha producido un error durante el hunting:\n```\n{error_msg[:1000]}\n```",
-                "timestamp": datetime.now().isoformat()
-            }]
-        }
-        requests.post(self.webhook_url, json=payload)
+            print(f"⚠️ Error al enviar status: {e}")
+            return False

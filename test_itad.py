@@ -5,18 +5,12 @@ Prueba rápida de la integración con ITAD
 """
 
 import sys
-import os
 sys.path.insert(0, '.')
 
 from modules.itad_hunter import IsThereAnyDealHunter
 from modules.reviews_externas import ReviewsExternas
 from modules.scoring import SistemaScoring
 import json
-try:
-    from dotenv import load_dotenv
-except Exception:
-    def load_dotenv(*_args, **_kwargs):
-        return False
 
 def test_itad_completo():
     """Prueba completa de ITAD + Reviews + Scoring"""
@@ -39,13 +33,12 @@ def test_itad_completo():
         return
     
     # 3. Cargar config para RAWG
-    load_dotenv()
     try:
         with open('config.json', 'r') as f:
             config = json.load(f)
-            rawg_key = os.getenv('RAWG_API_KEY') or config.get('rawg_api_key')
+            rawg_key = config.get('rawg_api_key')
     except:
-        rawg_key = os.getenv('RAWG_API_KEY')
+        rawg_key = None
     
     reviews_ext = ReviewsExternas(api_key=rawg_key)
     scoring = SistemaScoring()
