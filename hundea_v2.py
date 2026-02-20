@@ -521,6 +521,9 @@ def main():
             webhook_weekends = config.get('webhook_weekends')
             webhook_deals = config.get('webhook_deals')
             webhook_todos = config.get('webhook_todos')
+            webhook_nintendo = config.get('webhook_nintendo')
+            webhook_playstation = config.get('webhook_playstation')
+            webhook_xbox = config.get('webhook_xbox')
             rol_id = config.get('rol_id')
             rol_todos = config.get('rol_todos')
             rol_deals = config.get('rol_deals')
@@ -542,6 +545,16 @@ def main():
                     rol_deals=config.get('rol_deals'),
                     rol_todos=config.get('rol_todos')
                 )
+
+                def _webhook_consola(juego):
+                    tienda = (juego.get('tienda') or '').lower()
+                    if 'nintendo' in tienda:
+                        return webhook_nintendo
+                    if 'playstation' in tienda:
+                        return webhook_playstation
+                    if 'xbox' in tienda:
+                        return webhook_xbox
+                    return None
                 
                 # Enviar juegos premium
                 for juego in juegos_premium:
@@ -549,6 +562,12 @@ def main():
                         if notifier.enviar_juego_premium(juego, juego['score'], juego['estrellas']):
                             cache['juegos_anunciados'].append(juego['id'])
                             enviados_premium += 1
+                            webhook_consola = _webhook_consola(juego)
+                            if webhook_consola and webhook_consola != webhook_premium:
+                                notifier._enviar_notificacion(
+                                    juego, juego['score'], juego['estrellas'],
+                                    webhook_consola, "premium", None
+                                )
                     else:
                         print(f"⏭️  Saltando {juego['titulo']} (ya anunciado)")
                 
@@ -558,6 +577,12 @@ def main():
                         if notifier.enviar_juego_bajos(juego, juego['score']):
                             cache['juegos_anunciados'].append(juego['id'])
                             enviados_bajos += 1
+                            webhook_consola = _webhook_consola(juego)
+                            if webhook_consola and webhook_consola != webhook_bajos:
+                                notifier._enviar_notificacion(
+                                    juego, juego['score'], "⚠️",
+                                    webhook_consola, "bajos", None
+                                )
                     else:
                         print(f"⏭️  Saltando {juego['titulo']} (ya anunciado)")
                 
@@ -595,6 +620,13 @@ def main():
                             if notifier.enviar_oferta_descuento(juego, juego['score'], juego['estrellas']):
                                 cache['juegos_anunciados'].append(deal_id)
                                 enviados_deals += 1
+                                webhook_consola = _webhook_consola(juego)
+                                if webhook_consola and webhook_consola != webhook_deals:
+                                    notifier.enviar_oferta_descuento(
+                                        juego, juego['score'], juego['estrellas'],
+                                        webhook_override=webhook_consola,
+                                        rol_override=None
+                                    )
                         else:
                             print(f"⏭️  Saltando oferta {juego['titulo']} (ya anunciado)")
                 

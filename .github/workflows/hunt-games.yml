@@ -40,6 +40,9 @@ jobs:
         WEBHOOK_DESCUENTOS: ${{ secrets.HUN_DEA_DESCUENTOS }}
         WEBHOOK_STATUS: ${{ secrets.DISCORD_WEBHOOK_STATUS }}
         WEBHOOK_TODOS: ${{ secrets.DISCORD_WEBHOOK_ALL }}
+        WEBHOOK_NINTENDO: ${{ secrets.DISCORD_WEBHOOK_NINTENDO }}
+        WEBHOOK_PLAYSTATION: ${{ secrets.DISCORD_WEBHOOK_PLAYSTATION }}
+        WEBHOOK_XBOX: ${{ secrets.DISCORD_WEBHOOK_XBOX }}
         RAWG_KEY: ${{ secrets.RAWG_API_KEY }}
       run: |
         python3 << 'PYTHON_SCRIPT'
@@ -52,6 +55,9 @@ jobs:
             "webhook_deals": os.environ.get('WEBHOOK_DESCUENTOS', ''),
             "webhook_todos": os.environ.get('WEBHOOK_TODOS', ''),
             "webhook_status": os.environ.get('WEBHOOK_STATUS', ''),
+            "webhook_nintendo": os.environ.get('WEBHOOK_NINTENDO', ''),
+            "webhook_playstation": os.environ.get('WEBHOOK_PLAYSTATION', ''),
+            "webhook_xbox": os.environ.get('WEBHOOK_XBOX', ''),
             "enviar_discord": True,
             "rol_premium": "1449938401649496176",
             "rol_bajos": "1449942355997360259",

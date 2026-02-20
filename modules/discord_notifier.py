@@ -149,7 +149,7 @@ class DiscordNotifier:
         
         return enviado
     
-    def enviar_oferta_descuento(self, juego, score, estrellas):
+    def enviar_oferta_descuento(self, juego, score, estrellas, webhook_override=None, rol_override=None):
         """
         Envía una oferta con descuento al canal de deals
         
@@ -161,7 +161,10 @@ class DiscordNotifier:
         Returns:
             bool: True si se envió correctamente
         """
-        if not self.webhook_deals:
+        webhook_target = webhook_override or self.webhook_deals
+        rol_target = rol_override if rol_override is not None else self.rol_deals
+        
+        if not webhook_target:
             print("⚠️  Webhook de deals no configurado")
             return False
         
@@ -176,8 +179,8 @@ class DiscordNotifier:
             
             # Crear mensaje
             content = f"💰 **¡GRAN DESCUENTO (-{descuento}%)!**"
-            if self.rol_deals:
-                content += f" <@&{self.rol_deals}>"
+            if rol_target:
+                content += f" <@&{rol_target}>"
             
             # Crear embed
             color = self.colores_tienda.get(juego['tienda'], 0x00D9FF)
@@ -240,7 +243,7 @@ class DiscordNotifier:
                 "embeds": [embed]
             }
             
-            response = requests.post(self.webhook_deals, json=payload)
+            response = requests.post(webhook_target, json=payload)
             
             if response.status_code == 204:
                 print(f"✅ Oferta enviada: {juego['titulo']} (-{descuento}%)")

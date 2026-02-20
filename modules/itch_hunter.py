@@ -124,6 +124,9 @@ class ItchHunter:
         match = re.search(r'<img[^>]+src="([^"]+)"', html_text, re.IGNORECASE)
         if match:
             return html.unescape(match.group(1))
+        match = re.search(r"<img[^>]+src='([^']+)'", html_text, re.IGNORECASE)
+        if match:
+            return html.unescape(match.group(1))
         return None
 
     def _limpiar_html(self, html_text):
