@@ -3,6 +3,8 @@
 Busca juegos gratis en Itch.io usando su RSS Feed
 """
 
+import html
+import re
 import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime
@@ -20,6 +22,9 @@ class ItchHunter:
             "https://itch.io/games/top-rated/top-sellers.xml"
         ]
         self.session = requests.Session()
+        self.plataformas_validas = {
+            'windows', 'macos', 'linux', 'android'
+        }
     
     def obtener_juegos_gratis(self):
         """
@@ -66,23 +71,38 @@ class ItchHunter:
                     if title_elem is None or link_elem is None:
                         continue
                     
-                    title = title_elem.text
+                    title_raw = title_elem.text or ""
                     link = link_elem.text
-                    descripcion = desc_elem.text if desc_elem is not None else "Juego indie gratis de Itch.io"
+                    descripcion_raw = desc_elem.text if desc_elem is not None else "Juego indie gratis de Itch.io"
+                    
+                    # Extraer imagen del HTML si existe
+                    imagen_url = self._extraer_imagen_html(descripcion_raw)
+                    
+                    # Limpiar título y tags
+                    titulo, tags = self._limpiar_titulo_y_tags(title_raw)
+                    if self._es_demo(titulo, tags):
+                        continue
+                    
+                    # Plataformas
+                    plataformas = self._extraer_plataformas(tags)
+                    
+                    # Limpiar descripción (sin HTML)
+                    descripcion = self._limpiar_html(descripcion_raw)
+                    descripcion = self._formatear_descripcion(descripcion, plataformas)
                     
                     # Filtrar assets/soundtracks
-                    if any(skip in title.lower() for skip in ['soundtrack', 'ost', 'music', 'asset pack']):
+                    if any(skip in titulo.lower() for skip in ['soundtrack', 'ost', 'music', 'asset pack']):
                         continue
                     
                     # Crear info del juego
                     info = {
                         'id': f"itch_{link.split('/')[-1]}",
-                        'titulo': title,
+                        'titulo': titulo,
                         'descripcion': descripcion[:200] if descripcion else "Juego indie gratis",
                         'inicio': datetime.now().isoformat(),
                         'fin': None,  # Permanente
                         'url': link,
-                        'imagen': None,  # RSS no incluye imágenes
+                        'imagen': imagen_url,
                         'tienda': 'Itch.io'
                     }
                     
@@ -97,6 +117,56 @@ class ItchHunter:
         except Exception as e:
             print(f"❌ Error al consultar Itch.io: {e}")
             return []
+
+    def _extraer_imagen_html(self, html_text):
+        if not html_text:
+            return None
+        match = re.search(r'<img[^>]+src="([^"]+)"', html_text, re.IGNORECASE)
+        if match:
+            return html.unescape(match.group(1))
+        return None
+
+    def _limpiar_html(self, html_text):
+        if not html_text:
+            return ""
+        # Quitar tags HTML
+        text = re.sub(r"<[^>]+>", " ", html_text)
+        text = html.unescape(text)
+        return " ".join(text.split()).strip()
+
+    def _limpiar_titulo_y_tags(self, titulo):
+        tags = re.findall(r"\[([^\]]+)\]", titulo)
+        titulo_limpio = re.sub(r"\s*\[[^\]]+\]\s*", " ", titulo)
+        titulo_limpio = " ".join(titulo_limpio.split()).strip()
+        return titulo_limpio, tags
+
+    def _es_demo(self, titulo, tags):
+        if re.search(r"\bdemo\b", titulo, re.IGNORECASE):
+            return True
+        for tag in tags:
+            if re.search(r"demo", tag, re.IGNORECASE):
+                return True
+        return False
+
+    def _extraer_plataformas(self, tags):
+        plataformas = []
+        for tag in tags:
+            tag_norm = tag.strip().lower()
+            if tag_norm in self.plataformas_validas:
+                plataformas.append(tag_norm)
+        # Orden fijo
+        orden = ['windows', 'macos', 'linux', 'android']
+        plataformas_ordenadas = [p for p in orden if p in plataformas]
+        return plataformas_ordenadas
+
+    def _formatear_descripcion(self, descripcion, plataformas):
+        partes = []
+        if descripcion:
+            partes.append(descripcion)
+        if plataformas:
+            pretty = ", ".join([p.title() if p != "macos" else "macOS" for p in plataformas])
+            partes.append(f"Plataformas: {pretty}")
+        return " | ".join(partes).strip()
 
 
 # Test
