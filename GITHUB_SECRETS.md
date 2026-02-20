@@ -130,7 +130,7 @@ Reemplaza con el ID que copiaste:
 ### Test Manual del Workflow
 
 1. Ve a **Actions** en GitHub
-2. Selecciona **HunDea v2 - Multi-Store Hunter**
+2. Selecciona **HunDea v3 - Multi-Store Hunter**
 3. Click **Run workflow** dropdown
 4. Click **Run workflow** (verde)
 
@@ -143,7 +143,7 @@ Deberías ver en los logs:
 ✅ RAWG API key configurada
 ✅ Webhook de descuentos configurado
 
-🎮 HunDea v2 - Multi-Store Free Games Hunter
+🎮 HunDea v3 - Multi-Store Free Games Hunter
 ======================================
 
 💰 Buscando OFERTAS con 70%+ descuento...

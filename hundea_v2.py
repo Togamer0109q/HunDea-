@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-🎮 HunDea v2 - Multi-Store Free Games Hunter
+🎮 HunDea v3 - Multi-Store Free Games Hunter
 Bot inteligente que detecta juegos gratis de múltiples tiendas
 y los clasifica por calidad
 
@@ -9,10 +9,15 @@ Threshold: 3.5+ = Premium, <3.5 = Bajos
 
 import json
 import sys
+from datetime import datetime, timezone
 from modules.epic_hunter import EpicHunter
 from modules.steam_hunter import SteamHunter
 from modules.itad_hunter import IsThereAnyDealHunter
 from modules.cheapshark_hunter import CheapSharkHunter
+from modules.itch_hunter import ItchHunter
+from modules.platprices_hunter import PlatPricesHunter
+from modules.xbox_hunter import XboxHunter
+from modules.nintendo_hunter import NintendoHunter
 from modules.scoring import SistemaScoring
 from modules.discord_notifier import DiscordNotifier
 from modules.reviews_externas import ReviewsExternas
@@ -34,14 +39,31 @@ def cargar_cache():
     """Carga cache de juegos anunciados"""
     try:
         with open('cache.json', 'r', encoding='utf-8') as f:
-            return json.load(f)
+            cache = json.load(f)
+            if not isinstance(cache, dict):
+                return {"juegos_anunciados": [], "weekend_anunciados": {}}
+            if 'juegos_anunciados' not in cache or not isinstance(cache['juegos_anunciados'], list):
+                cache['juegos_anunciados'] = []
+            if 'weekend_anunciados' not in cache or not isinstance(cache['weekend_anunciados'], dict):
+                cache['weekend_anunciados'] = {}
+            return cache
     except FileNotFoundError:
-        return {"juegos_anunciados": []}
+        return {"juegos_anunciados": [], "weekend_anunciados": {}}
 
 def guardar_cache(cache):
     """Guarda cache"""
     with open('cache.json', 'w', encoding='utf-8') as f:
         json.dump(cache, f, indent=2, ensure_ascii=False)
+
+def iso_a_timestamp(fecha_str):
+    """Convierte fecha ISO a timestamp Unix"""
+    try:
+        if not fecha_str:
+            return None
+        fecha = datetime.fromisoformat(fecha_str.replace('Z', '+00:00'))
+        return int(fecha.timestamp())
+    except Exception:
+        return None
 
 def normalizar_titulo(titulo):
     """
@@ -121,10 +143,10 @@ def eliminar_duplicados(juegos_lista):
     return list(vistos.values())
 
 def main():
-    """Función principal de HunDea v2"""
+    """Función principal de HunDea v3"""
     
     print("\n" + "="*70)
-    print("🎮 HunDea v2 - Multi-Store Free Games Hunter")
+    print("🎮 HunDea v3 - Multi-Store Free Games Hunter")
     print("="*70 + "\n")
     
     # Cargar configuración
@@ -148,9 +170,22 @@ def main():
         
         # Inicializar detectores
         epic_hunter = EpicHunter()
-        steam_hunter = SteamHunter()
+        steam_cc = config.get('steam_cc', 'us')
+        steam_lang = config.get('steam_lang', 'english')
+        steam_hunter = SteamHunter(cc=steam_cc, lang=steam_lang)
         itad_hunter = IsThereAnyDealHunter()
         cheapshark_hunter = CheapSharkHunter()
+        itch_hunter = ItchHunter()
+        ps_region = config.get('ps_region', 'en-us')
+        platprices_hunter = PlatPricesHunter(region=ps_region)
+
+        xbox_market = config.get('xbox_market', 'US')
+        xbox_language = config.get('xbox_language', 'en-US')
+        xbox_hunter = XboxHunter(market=xbox_market, language=xbox_language)
+
+        nintendo_region = config.get('nintendo_region', 'MX')
+        nintendo_lang = config.get('nintendo_lang', 'es')
+        nintendo_hunter = NintendoHunter(region=nintendo_region, lang=nintendo_lang)
         scoring = SistemaScoring()
         
         # Reviews externas con API key si está configurado
@@ -206,6 +241,62 @@ def main():
         
         todos_juegos.extend(juegos_cheapshark)
         
+        # Itch.io - Juegos indie gratis
+        print("\n🔴 Buscando juegos indie gratis en Itch.io...")
+        juegos_itch = itch_hunter.obtener_juegos_gratis()
+        
+        # Buscar reviews para juegos de Itch.io
+        for juego in juegos_itch:
+            if not juego.get('reviews_count'):
+                print(f"   🔍 Buscando reviews para: {juego['titulo']}")
+                reviews = reviews_externas.buscar_reviews(juego['titulo'], 'Itch.io')
+                if reviews:
+                    juego.update(reviews)
+        
+        todos_juegos.extend(juegos_itch)
+        
+        # PlatPrices - PlayStation deals
+        print("\n🎮 Buscando deals de PlayStation (PlatPrices)...")
+        juegos_playstation = platprices_hunter.obtener_juegos_gratis()
+        
+        # Buscar reviews para PlayStation
+        for juego in juegos_playstation:
+            if not juego.get('reviews_count'):
+                print(f"   🔍 Buscando reviews para: {juego['titulo']}")
+                reviews = reviews_externas.buscar_reviews(juego['titulo'], 'PlayStation')
+                if reviews:
+                    juego.update(reviews)
+        
+        todos_juegos.extend(juegos_playstation)
+        
+        # Xbox - Microsoft Store
+        print("\n🎮 Buscando juegos gratis de Xbox (Microsoft Store)...")
+        juegos_xbox = xbox_hunter.obtener_juegos_gratis()
+        
+        # Buscar reviews para Xbox
+        for juego in juegos_xbox:
+            if not juego.get('reviews_count'):
+                print(f"   🔍 Buscando reviews para: {juego['titulo']}")
+                reviews = reviews_externas.buscar_reviews(juego['titulo'], 'Xbox')
+                if reviews:
+                    juego.update(reviews)
+        
+        todos_juegos.extend(juegos_xbox)
+
+        # Nintendo - eShop
+        print("\n🎮 Buscando juegos gratis de Nintendo eShop...")
+        juegos_nintendo = nintendo_hunter.obtener_juegos_gratis()
+        
+        # Buscar reviews para Nintendo
+        for juego in juegos_nintendo:
+            if not juego.get('reviews_count'):
+                print(f"   🔍 Buscando reviews para: {juego['titulo']}")
+                reviews = reviews_externas.buscar_reviews(juego['titulo'], 'Nintendo')
+                if reviews:
+                    juego.update(reviews)
+        
+        todos_juegos.extend(juegos_nintendo)
+        
         # Eliminar duplicados en juegos gratis
         print(f"\n🗑️ Eliminando duplicados en juegos gratis...")
         juegos_antes = len(todos_juegos)
@@ -216,7 +307,8 @@ def main():
             print(f"   📊 Total juegos únicos: {len(todos_juegos)}")
         
         # IsThereAnyDeal - OFERTAS CON DESCUENTO
-        descuento_minimo = config.get('deals_descuento_minimo', 70)
+        descuento_minimo = config.get('deals_descuento_minimo', 30)
+        descuento_maximo = config.get('deals_descuento_maximo', 99)
         precio_maximo_deals = config.get('deals_precio_maximo', 10)
         
         print(f"\n💰 Buscando OFERTAS con {descuento_minimo}%+ descuento en ITAD...")
@@ -244,6 +336,45 @@ def main():
         
         # Combinar todas las ofertas
         ofertas_itad.extend(ofertas_cheapshark)
+
+        # PlayStation - Ofertas con Descuento (PlatPrices)
+        print(f"\n🎮 Buscando OFERTAS con {descuento_minimo}%+ descuento en PlayStation (PlatPrices)...")
+        ofertas_playstation = platprices_hunter.obtener_ofertas_descuento(descuento_minimo, descuento_maximo)
+        
+        # Buscar reviews para ofertas de PlayStation
+        for juego in ofertas_playstation:
+            if not juego.get('reviews_count'):
+                print(f"   🔍 Buscando reviews para: {juego['titulo']}")
+                reviews = reviews_externas.buscar_reviews(juego['titulo'], 'PlayStation')
+                if reviews:
+                    juego.update(reviews)
+        ofertas_itad.extend(ofertas_playstation)
+
+        # Xbox - Ofertas con Descuento
+        print(f"\n🎮 Buscando OFERTAS con {descuento_minimo}%+ descuento en Xbox Store...")
+        ofertas_xbox = xbox_hunter.obtener_ofertas_descuento(descuento_minimo, descuento_maximo)
+        
+        # Buscar reviews para ofertas de Xbox
+        for juego in ofertas_xbox:
+            if not juego.get('reviews_count'):
+                print(f"   🔍 Buscando reviews para: {juego['titulo']}")
+                reviews = reviews_externas.buscar_reviews(juego['titulo'], 'Xbox')
+                if reviews:
+                    juego.update(reviews)
+        ofertas_itad.extend(ofertas_xbox)
+
+        # Nintendo - Ofertas con Descuento
+        print(f"\n🎮 Buscando OFERTAS con {descuento_minimo}%+ descuento en Nintendo eShop...")
+        ofertas_nintendo = nintendo_hunter.obtener_ofertas_descuento(descuento_minimo, descuento_maximo)
+        
+        # Buscar reviews para ofertas de Nintendo
+        for juego in ofertas_nintendo:
+            if not juego.get('reviews_count'):
+                print(f"   🔍 Buscando reviews para: {juego['titulo']}")
+                reviews = reviews_externas.buscar_reviews(juego['titulo'], 'Nintendo')
+                if reviews:
+                    juego.update(reviews)
+        ofertas_itad.extend(ofertas_nintendo)
         
         # Eliminar duplicados ANTES de separar 100%
         print(f"\n🗑️ Eliminando duplicados en ofertas...")
@@ -252,6 +383,18 @@ def main():
         duplicados_removidos = ofertas_antes - len(ofertas_itad)
         if duplicados_removidos > 0:
             print(f"   ✅ Removidos {duplicados_removidos} duplicado(s) en ofertas")
+
+        # Filtrar descuentos fuera de rango (máximo para deals pagados)
+        ofertas_filtradas = []
+        for oferta in ofertas_itad:
+            descuento = oferta.get('descuento_porcentaje', 0) or 0
+            if descuento >= 100:
+                ofertas_filtradas.append(oferta)
+            elif descuento_maximo and descuento > descuento_maximo:
+                continue
+            else:
+                ofertas_filtradas.append(oferta)
+        ofertas_itad = ofertas_filtradas
         
         # Separar ofertas 100% descuento (son GRATIS)
         print(f"\n🎁 Separando ofertas 100% descuento como GRATIS...")
@@ -289,9 +432,8 @@ def main():
         # juegos_steam = steam_hunter.obtener_juegos_gratis()
         # todos_juegos.extend(juegos_steam)
         
-        # Free Weekends (temporalmente desactivado)
-        # free_weekends = steam_hunter.obtener_free_weekends()
-        free_weekends = []
+        # Free Weekends (Steam)
+        free_weekends = steam_hunter.obtener_free_weekends()
         
         print(f"\n📊 Total encontrado: {len(todos_juegos)} juego(s) gratis")
         print(f"💰 Ofertas: {len(ofertas_itad)} oferta(s) con descuento")
@@ -419,16 +561,31 @@ def main():
                     else:
                         print(f"⏭️  Saltando {juego['titulo']} (ya anunciado)")
                 
-                # Enviar free weekends
+                # Enviar free weekends (deduplicación por ventana activa)
+                now_ts = int(datetime.now(timezone.utc).timestamp())
+                weekend_cache = cache.setdefault('weekend_anunciados', {})
+                expirados = [
+                    k for k, v in weekend_cache.items()
+                    if isinstance(v, (int, float)) and now_ts >= v
+                ]
+                for k in expirados:
+                    del weekend_cache[k]
+
                 for juego in free_weekends:
-                    weekend_id = f"{juego['id']}_weekend"
-                    if weekend_id not in cache['juegos_anunciados']:
-                        score = scoring.calcular_score(juego)
-                        estrellas = scoring.obtener_estrellas(score)
-                        if notifier.enviar_free_weekend(juego, score, estrellas):
-                            cache['juegos_anunciados'].append(weekend_id)
-                    else:
-                        print(f"⏭️  Saltando {juego['titulo']} (ya anunciado)")
+                    weekend_key = juego['id']
+                    fin_ts = iso_a_timestamp(juego.get('fin')) or juego.get('fin_ts_estimada')
+                    if not fin_ts:
+                        fin_ts = now_ts + (4 * 24 * 60 * 60)
+
+                    cache_fin = weekend_cache.get(weekend_key)
+                    if cache_fin and now_ts < cache_fin:
+                        print(f"⏭️  Saltando {juego['titulo']} (free weekend activo)")
+                        continue
+
+                    score = scoring.calcular_score(juego)
+                    estrellas = scoring.obtener_estrellas(score)
+                    if notifier.enviar_free_weekend(juego, score, estrellas):
+                        weekend_cache[weekend_key] = fin_ts
                 
                 # Enviar ofertas con descuento
                 if webhook_deals:

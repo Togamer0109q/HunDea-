@@ -1,4 +1,4 @@
-# 🕐 HORARIO DE EJECUCIÓN - HunDeaBot v2.7
+# 🕐 HORARIO DE EJECUCIÓN - HunDeaBot v3.0
 
 ## 📅 Configuración Actual
 
@@ -121,7 +121,7 @@ GitHub Actions **siempre** usa UTC, no hora local. La conversión ya está hecha
 
 ### 🔧 Ejecución Manual
 Puedes ejecutar el bot manualmente en cualquier momento:
-1. Ve a: **Actions** → **HunDea v2 - Multi-Store Hunter**
+1. Ve a: **Actions** → **HunDea v3 - Multi-Store Hunter**
 2. Click en **Run workflow**
 3. Click en **Run workflow** (confirmar)
 
@@ -145,7 +145,7 @@ Con 8 ejecuciones diarias:
 
 ### Ver Próximas Ejecuciones
 1. Ve a tu repositorio en GitHub
-2. **Actions** → **HunDea v2 - Multi-Store Hunter**
+2. **Actions** → **HunDea v3 - Multi-Store Hunter**
 3. Verás la próxima ejecución programada
 
 ### Verificar en Logs

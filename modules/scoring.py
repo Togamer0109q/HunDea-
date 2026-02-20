@@ -1,5 +1,5 @@
 """
-Sistema de puntuación para HunDea v2
+Sistema de puntuación para HunDea v3
 Calcula el score de cada juego basado en reviews y popularidad
 Versión mejorada con sistema híbrido inteligente
 """

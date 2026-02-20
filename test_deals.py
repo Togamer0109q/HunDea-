@@ -23,7 +23,7 @@ hunter = IsThereAnyDealHunter()
 scoring = SistemaScoring()
 
 # Configuración
-DESCUENTO_MIN = 70
+DESCUENTO_MIN = 30
 SCORE_MIN = 3.6
 
 print(f"\n⚙️  Configuración:")
@@ -102,7 +102,7 @@ if ofertas_calidad:
 print("\n💡 Próximos pasos:")
 if ofertas_calidad:
     print("   1. Configurar webhook_deals en config.json")
-    print("   2. python hundea_v2.py          ← Ejecución completa")
+    print("   2. python hundea_v3.py          ← Ejecución completa")
     print("   3. Verificar notificaciones en Discord")
 else:
     print("   1. Bajar thresholds para test:")

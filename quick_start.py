@@ -43,7 +43,7 @@ print(f"📊 Total: {len(juegos)} juego(s) de {len(set(j['tienda'] for j in jueg
 
 print("💡 Próximos pasos:")
 print("   1. python test_itad.py          ← Test completo con reviews")
-print("   2. python hundea_v2.py          ← Ejecución completa")
+print("   2. python hundea_v3.py          ← Ejecución completa")
 print("   3. git add . && git push        ← Subir cambios\n")
 
 print("="*70 + "\n")

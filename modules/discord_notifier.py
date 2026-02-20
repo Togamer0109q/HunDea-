@@ -1,5 +1,5 @@
 """
-Sistema de notificaciones de Discord para HunDea v2
+Sistema de notificaciones de Discord para HunDea v3
 Maneja los 5 webhooks y formatos de mensajes
 """
 
@@ -209,7 +209,7 @@ class DiscordNotifier:
                     }
                 ],
                 "footer": {
-                    "text": "HunDea v2.7 • Ofertas de Calidad"
+                    "text": "HunDea v3.0 • Ofertas de Calidad"
                 },
                 "timestamp": datetime.utcnow().isoformat()
             }
@@ -333,7 +333,7 @@ class DiscordNotifier:
                 }
             ],
             "footer": {
-                "text": "HunDea v2.7 • Multi-Store Free Games Hunter"
+                "text": "HunDea v3.0 • Multi-Store Free Games Hunter"
             },
             "timestamp": datetime.utcnow().isoformat()
         }

@@ -1,4 +1,4 @@
-# 🚀 Setup Rápido - HunDea v2
+# 🚀 Setup Rápido - HunDea v3
 
 ## ✅ Checklist de configuración
 
@@ -43,7 +43,7 @@ Edita `config.json` local y agrega tu RAWG key:
 
 Luego ejecuta:
 ```bash
-python hundea_v2.py
+python hundea_v3.py
 ```
 
 Deberías ver:
@@ -61,7 +61,7 @@ Deberías ver:
 
 ```bash
 git add .
-git commit -m "🎉 HunDea v2 with RAWG API integration"
+git commit -m "🎉 HunDea v3 release"
 git push
 ```
 
@@ -70,7 +70,7 @@ git push
 ### 5. Ejecutar el workflow
 
 1. Ve a Actions en GitHub
-2. HunDea v2 - Multi-Store Hunter
+2. HunDea v3 - Multi-Store Hunter
 3. Run workflow
 4. ¡Espera los resultados en Discord! 🎮
 

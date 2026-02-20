@@ -28,12 +28,12 @@ class StatusNotifier:
             bool: True si se envió correctamente
         """
         embed = {
-            "title": "🚀 HunDea v2 - Workflow Iniciado",
+            "title": "🚀 HunDea v3 - Workflow Iniciado",
             "description": "Buscando juegos gratis en todas las tiendas...",
             "color": 0x3498db,  # Azul
             "timestamp": datetime.utcnow().isoformat(),
             "footer": {
-                "text": "HunDea v2 Status"
+                "text": "HunDea v3 Status"
             }
         }
         
@@ -52,7 +52,7 @@ class StatusNotifier:
             bool: True si se envió correctamente
         """
         embed = {
-            "title": "✅ HunDea v2 - Completado Exitosamente",
+            "title": "✅ HunDea v3 - Completado Exitosamente",
             "description": f"Búsqueda de juegos gratis finalizada",
             "color": 0x2ecc71,  # Verde
             "fields": [
@@ -74,7 +74,7 @@ class StatusNotifier:
             ],
             "timestamp": datetime.utcnow().isoformat(),
             "footer": {
-                "text": "HunDea v2 Status"
+                "text": "HunDea v3 Status"
             }
         }
         
@@ -91,7 +91,7 @@ class StatusNotifier:
             bool: True si se envió correctamente
         """
         embed = {
-            "title": "❌ HunDea v2 - Error en Workflow",
+            "title": "❌ HunDea v3 - Error en Workflow",
             "description": f"El workflow encontró un error",
             "color": 0xe74c3c,  # Rojo
             "fields": [
@@ -103,7 +103,7 @@ class StatusNotifier:
             ],
             "timestamp": datetime.utcnow().isoformat(),
             "footer": {
-                "text": "HunDea v2 Status"
+                "text": "HunDea v3 Status"
             }
         }
         

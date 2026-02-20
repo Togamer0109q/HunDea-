@@ -1,4 +1,4 @@
-name: HunDea v2 - Multi-Store Hunter
+name: HunDea v3 - Multi-Store Hunter
 
 on:
   schedule:
@@ -59,9 +59,17 @@ jobs:
             "rol_deals": "1454277753187598509",
             "rol_todos": "1451738702262046750",
             "rawg_api_key": os.environ.get('RAWG_KEY', ''),
-            "deals_descuento_minimo": 40,
+            "deals_descuento_minimo": 30,
+            "deals_descuento_maximo": 99,
             "deals_precio_maximo": 20,
-            "deals_score_minimo": 2.5
+            "deals_score_minimo": 2.5,
+            "steam_cc": "mx",
+            "steam_lang": "spanish",
+            "xbox_market": "MX",
+            "xbox_language": "es-MX",
+            "nintendo_region": "MX",
+            "nintendo_lang": "es",
+            "ps_region": "es-mx"
         }
         with open('config.json', 'w') as f:
             json.dump(config, f)
@@ -72,8 +80,8 @@ jobs:
             print("✅ Webhook de descuentos configurado")
         PYTHON_SCRIPT
     
-    - name: 🎮 Ejecutar HunDea v2
-      run: python hundea_v2.py
+    - name: 🎮 Ejecutar HunDea v3
+      run: python hundea_v3.py
     
     - name: 📊 Actualizar cache en el repo
       run: |
