@@ -104,9 +104,19 @@ class XboxHunter:
             return []
     
     def _consultar_catalogo(self, big_catalog_id, count=50):
+        try:
+            return self._consultar_catalogo_params(big_catalog_id, self.market, self.language, count)
+        except requests.HTTPError as e:
+            status = getattr(e.response, "status_code", None)
+            if status == 400 and (self.market != "US" or self.language != "en-US"):
+                print("⚠️ Xbox API MX devolvió 400, fallback a US")
+                return self._consultar_catalogo_params(big_catalog_id, "US", "en-US", count)
+            raise
+
+    def _consultar_catalogo_params(self, big_catalog_id, market, language, count):
         params = {
-            'market': self.market,
-            'languages': self.language,
+            'market': market,
+            'languages': language,
             'MS-CV': 'DGU1mcuYo0WMMp+F.1',
             'bigCatalogId': big_catalog_id,
             'deviceFamily': 'Windows.Xbox',

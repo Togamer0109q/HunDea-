@@ -14,7 +14,12 @@ class ItchHunter:
     """
     
     def __init__(self):
-        self.rss_url = "https://itch.io/games/top-rated/top-sellers.xml"
+        self.rss_urls = [
+            "https://itch.io/games/free.xml",
+            "https://itch.io/games/new-and-popular/free.xml",
+            "https://itch.io/games/top-rated/top-sellers.xml"
+        ]
+        self.session = requests.Session()
     
     def obtener_juegos_gratis(self):
         """
@@ -33,8 +38,18 @@ class ItchHunter:
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
             
-            response = requests.get(self.rss_url, headers=headers, timeout=10)
-            response.raise_for_status()
+            response = None
+            for url in self.rss_urls:
+                try:
+                    response = self.session.get(url, headers=headers, timeout=10)
+                    response.raise_for_status()
+                    break
+                except Exception:
+                    response = None
+                    continue
+            
+            if not response:
+                raise Exception("Itch.io RSS no disponible (403/timeout)")
             
             # Parsear XML
             root = ET.fromstring(response.content)

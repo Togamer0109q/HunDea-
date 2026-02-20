@@ -246,6 +246,8 @@ class DiscordNotifier:
                 print(f"✅ Oferta enviada: {juego['titulo']} (-{descuento}%)")
                 return True
             else:
+                if response.status_code == 404:
+                    print("⚠️ Webhook de deals inválido o eliminado (404)")
                 print(f"❌ Error al enviar oferta: {response.status_code}")
                 return False
         
@@ -288,6 +290,8 @@ class DiscordNotifier:
                 print(f"✅ Enviado a Discord ({tipo}): {juego['titulo']}")
                 return True
             else:
+                if response.status_code == 404:
+                    print("⚠️ Webhook inválido o eliminado (404)")
                 print(f"⚠️ Discord respondió con código {response.status_code}")
                 return False
                 
