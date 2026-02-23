@@ -118,7 +118,9 @@
     "itch_void-salvage",
     "itch_hill-kill",
     "itch_touchstarved",
-    "itch_solitaire-battle"
+    "itch_solitaire-battle",
+    "itch_dont-hike-alone",
+    "itch_dont-let-it-starve"
   ],
   "weekend_anunciados": {}
 }
